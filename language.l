@@ -4,34 +4,41 @@
 #include <string.h>    
 #define VALOR 1
 #define ID 2
-#define BOOLOP 3
-#define BOOLCON 4
-#define TRUE 5
-#define FALSE 6
-#define IF 7
-#define ELSE 8
-#define WHILE 9
-#define FOR 10
-#define TIPO 12
-#define COMENTARIO 13
-#define CARACTER 14
-#define FUNCTION 16
-#define MULT 17
-#define DIV 18
-#define MODULO 19
-#define SUMA 20
-#define RESTA 21
-#define FIN_LINEA 22
-#define LPAREN 23
-#define RPAREN 24
-#define LBRACE 25
-#define RBRACE 26
-#define LBRACKET 27
-#define RBRACKET 28
-#define ASIGNACION 29
-#define ERROR 30
-#define RETURN 31
-#define COMA 32
+#define TRUE 3
+#define FALSE 4
+#define IF 5
+#define ELSE 6
+#define WHILE 7
+#define FOR 8
+#define TIPO 9
+#define COMENTARIO 10
+#define CARACTER 11
+#define FUNCTION 12
+#define MULT 13
+#define DIV 14
+#define MODULO 15
+#define SUMA 16
+#define RESTA 17
+#define FIN_LINEA 18
+#define LPAREN 19
+#define RPAREN 20
+#define LBRACE 21
+#define RBRACE 22
+#define LBRACKET 23
+#define RBRACKET 24
+#define ASIGNACION 25
+#define ERROR 26
+#define RETURN 27
+#define COMA 28
+#define AND 29
+#define OR 30
+#define NOT 31
+#define MENORQUE 32
+#define MAYORQUE 33
+#define IGUALIGUAL 34
+#define DIFERENTE 35
+#define MAYORIGUAL 36
+#define MENORIGUAL 37
 %}
 
 %%
@@ -47,16 +54,16 @@
 "proc"              { return FUNCTION; }
 "return"              { return RETURN; }
 
-"<="                { return BOOLOP; }
-">="                { return BOOLOP; }
-"=="                { return BOOLOP; }
-"!="                { return BOOLOP; }
-"<"                 { return BOOLOP; }
-">"                 { return BOOLOP; }
+"<="                { return MENORIGUAL; }
+">="                { return MAYORIGUAL; }
+"=="                { return IGUALIGUAL; }
+"!="                { return DIFERENTE; }
+"<"                 { return MENORQUE; }
+">"                 { return MAYORQUE; }
 
-"and"               { return BOOLCON; }
-"or"                { return BOOLCON; }
-"not"               { return BOOLCON; }
+"and"               { return AND; }
+"or"                { return OR; }
+"not"               { return NOT; }
 
 "/"                 { return DIV; }
 "*"                 { return MULT; }
@@ -86,10 +93,7 @@
 .   { return ERROR; }
 %%
 char *token_names[] = {
-    "NULL_0", "VALOR", "ID", "BOOLOP", "BOOLCON", "TRUE", "FALSE", "IF", "ELSE", 
-    "WHILE", "FOR", "NULL_11", "TIPO", "COMENTARIO", "CARACTER", "NULL_15", "FUNCTION", 
-    "MULT", "DIV", "MODULO", "SUMA", "RESTA", "FIN_LINEA", "LPAREN", 
-    "RPAREN", "LBRACE", "RBRACE", "LBRACKET", "RBRACKET", "ASIGNACION", "ERROR", "RETURN", "COMA"
+ "VALOR","ID","TRUE","FALSE","IF","ELSE","WHILE","FOR","TIPO","COMENTARIO","CARACTER","FUNCTION","MULT","DIV","MODULO","SUMA","RESTA","FIN_LINEA","LPAREN","RPAREN","LBRACE","RBRACE","LBRACKET","RBRACKET","ASIGNACION","ERROR","RETURN","COMA","AND","OR","NOT","MENORQUE","MAYORQUE","IGUALIGUAL","DIFERENTE","MAYORIGUAL","MENORIGUAL"
 };
 int main () {
     int token;
