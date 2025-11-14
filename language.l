@@ -29,16 +29,16 @@
 #define ASIGNACION 25
 #define ERROR 26
 #define RETURN 27
-#define COMA 28
+#define COMMA 28
 #define AND 29
 #define OR 30
 #define NOT 31
-#define MENORQUE 32
-#define MAYORQUE 33
-#define IGUALIGUAL 34
-#define DIFERENTE 35
-#define MAYORIGUAL 36
-#define MENORIGUAL 37
+#define LT 32
+#define GT 33
+#define EQ 34
+#define NEQ 35
+#define GEQ 36
+#define LEQ 37
 %}
 
 %%
