@@ -1,0 +1,25 @@
+start
+  int ledPin = 13;
+  int sensorPin = A0;
+  int sensorValue = 0;
+  bool ledState = false;
+  
+  exec Serial_begin(9600);
+  exec pinMode(ledPin, 1);
+  exec pinMode(sensorPin, 0);
+  
+  while (true) start
+    sensorValue = exec analogRead(sensorPin);
+    exec Serial_print(sensorValue);
+    
+    if (sensorValue > 512) start
+      ledState = true;
+      exec digitalWrite(ledPin, 1);
+    end else start
+      ledState = false;
+      exec digitalWrite(ledPin, 0);
+    end
+    
+    exec delay(100);
+  end
+end
