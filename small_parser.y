@@ -1,11 +1,11 @@
 %{
 #include <stdio.h>
+#include <string.h>
 #include "ast.h"
 int    yylex(void);
 void   yyerror(const char *s);
 Node *root; // output
 %}
-%define api.value.type { Node* }
 %union {
     long ival;
     char *id;
@@ -14,25 +14,59 @@ Node *root; // output
 }
 %token START
 %token END
-%token NUMBER
-%token ID
+%token <ival> VALOR
+%token <id> ID
 %token SUMA RESTA MULT DIV
 %token FUNCTION EXEC
 %token LPAREN RPAREN COMMA SEMICOLON
-%token VALOR
 %token TRUE FALSE OR AND NOT LT LEQ GT GEQ EQ NEQ
-%token ASIGNACION
+%token ASSIGN
 
-%type <node> Programa Exec_funcion Asignacion Expresion Bloque BloqueAux
-%type <id> Id
+%type <node> Programa Asignacion Expresion Bloque BloqueAux
+%type <id> ID
 
 %%
 Programa : Bloque { root = $1;}
             ;
 Bloque : START BloqueAux END { $$ = $2;}
         ;
-BloqueAux: Asignacion SEMICOLON { $$ = create_asignacion_node($1, NULL); }
-          | Asignacion SEMICOLON BloqueAux { $$ = create_asignacion_node($1, $3); }
-          | Exec_funcion SEMICOLON { $$ = create_exec_node($1, NULL); }
-          | Exec_funcion SEMICOLON BloqueAux { $$ = create_exec_node($1, $3); }
-          ;
+BloqueAux: Asignacion SEMICOLON { $$ = $1; }
+        ;
+Asignacion: ID ASSIGN Expresion { $$ = new_assignment_node($1, $3); }
+            ;
+Expresion: VALOR { $$ = new_int_node($1); }
+        ;
+
+%%
+void yyerror(const char *s) {
+    fprintf(stderr, "parse error: %s\n", s);
+}
+
+void ast_print(Node *node, int indent) {
+    if (node == NULL) return;
+    for (int i = 0; i < indent; i++) printf("  ");
+    if(strcmp(node->type, "VALOR") == 0) {
+        printf("INT: %d\n", node->ivalue);
+    } else if (strcmp(node->type, "ASSIGN") == 0) {
+        printf("ASSIGN: %s\n", node->value);
+        ast_print(node->right, indent + 1);
+    } else {
+        printf("UNKNOWN NODE TYPE\n");
+    }
+}
+
+extern FILE *yyin;     /* provided by Flex */
+extern Node *root;     /* from parser.y */
+
+int main(int argc, char **argv){
+    if (argc > 1) {
+        yyin = fopen(argv[1], "r");
+        if (!yyin) { perror(argv[1]); return 1; }
+    }
+    if (yyparse() == 0) {
+        puts("Parse OK\nAST:");
+        if (root) ast_print(root, 0); else puts("(root is null)");
+    }
+    if (yyin && yyin != stdin) fclose(yyin);
+    return 0;
+}

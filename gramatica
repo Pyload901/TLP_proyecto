@@ -1,48 +1,43 @@
-Programa -> Bloque Programa | Declaracion_funcion Programa | e
-Declaracion_funcion -> proc Tipo_dato Id ( Parametros_funcion ) Bloque
-Parametros_funcion -> Tipo_dato Id Parametros_funcion_aux | e
-Parametros_funcion_aux -> , Tipo_dato Id Parametros_funcion_aux | e
-Retorno_funcion -> return Expresion
-Bloque -> start BloqueAux end
-BloqueAux -> Instruccion BloqueAux | e
-Instruccion -> Asignacion ; | Declaracion ; | For | While | If | Exec_funcion ; | Retorno_funcion ;
-Asignacion -> Id = Expresion | Id = [ Lista_valores ]
-Lista_valores -> Expresion Lista_valores_aux | e
-Lista_valores_aux -> , Expresion Lista_valores_aux | e
-Declaracion -> Tipo_dato Id | Tipo_dato Id = Expresion | Tipo_dato Id [ Numero_int ] | Tipo_dato Id [ Numero_int ] = [ Lista_valores ]
-For -> for ( Declaracion ; Expresion; Asignacion) Bloque
-While -> while ( Expresion ) Bloque
+Programa -> Bloque Programa | Declaracion_funcion Programa | λ
+Declaracion_funcion -> FUNCTION TIPO ID LPAREN Parametros_funcion RPAREN Bloque
+Parametros_funcion -> TIPO ID Parametros_funcion_aux | λ
+Parametros_funcion_aux -> COMMA TIPO ID Parametros_funcion_aux | λ
+Retorno_funcion -> RETURN Expresion
+Bloque -> START BloqueAux END
+BloqueAux -> Instruccion BloqueAux | λ
+Instruccion -> Asignacion SEMICOLON | Declaracion SEMICOLON | For | While | If | Exec_funcion SEMICOLON | Retorno_funcion SEMICOLON
+Asignacion -> ID ASSIGN Expresion | ID ASSIGN LBRACKET Lista_valores RBRACKET
+Lista_valores -> Expresion Lista_valores_aux | λ
+Lista_valores_aux -> COMMA Expresion Lista_valores_aux | λ
+Declaracion -> TIPO ID | TIPO ID ASSIGN Expresion | TIPO ID LBRACKET Numero_int RBRACKET | TIPO ID LBRACKET Numero_int RBRACKET ASSIGN LBRACKET Lista_valores RBRACKET
+For -> FOR LPAREN Declaracion SEMICOLON Expresion SEMICOLON Asignacion RPAREN Bloque
+While -> WHILE LPAREN Expresion RPAREN Bloque
 
-If -> if ( Expresion ) BloqueElseOpt
+If -> IF LPAREN Expresion RPAREN BloqueElseOpt
 BloqueElseOpt -> Bloque ElseOpt
-ElseOpt -> else Bloque | e
+ElseOpt -> ELSE Bloque | λ
 
-Exec_funcion -> exec Id ( Argumentos )
-Argumentos -> Expresion ArgumentosAux | e
-ArgumentosAux -> , Expresion ArgumentosAux | e
+Exec_funcion -> EXEC ID LPAREN Argumentos RPAREN
+Argumentos -> Expresion ArgumentosAux | λ
+ArgumentosAux -> COMMA Expresion ArgumentosAux | λ
 
 Expresion -> OrExpresion
 OrExpresion -> AndExpresion OrExpresionAux
-OrExpresionAux -> || AndExpresion OrExpresionAux | e
+OrExpresionAux -> OR AndExpresion OrExpresionAux | λ
 AndExpresion -> NotExpresion AndExpresionAux
-AndExpresionAux -> && NotExpresion AndExpresionAux | e
-NotExpresion -> ! NotExpresion | Expresion_relacional
+AndExpresionAux -> AND NotExpresion AndExpresionAux | λ
+NotExpresion -> NOT NotExpresion | Expresion_relacional
 Expresion_relacional -> Expresion_suma Expresion_relacionalAux
-Expresion_relacionalAux -> Op_relacional Expresion_suma | e
+Expresion_relacionalAux -> Op_relacional Expresion_suma | λ
 
 Expresion_suma -> Expresion_multiplicacion Expresion_sumaAux
-Expresion_sumaAux -> + Expresion_multiplicacion Expresion_sumaAux | - Expresion_multiplicacion Expresion_sumaAux | e
+Expresion_sumaAux -> ADD Expresion_multiplicacion Expresion_sumaAux | MINUS Expresion_multiplicacion Expresion_sumaAux | λ
 Expresion_multiplicacion -> Termino TerminoAux
-TerminoAux -> * Termino TerminoAux | / Termino TerminoAux | % Termino TerminoAux | e
-Termino -> - Factor | Factor
+TerminoAux -> MULT Termino TerminoAux | DIV Termino TerminoAux | MODULO Termino TerminoAux | λ
+Termino -> MINUS Factor | Factor
 
-Factor -> Id ArrayIndexOpt | Valor | ( Expresion )
-ArrayIndexOpt -> [ Expresion ] | e
-Op_relacional -> == | != | < | > | <= | >=
-Valor -> Numero_int | Numero_float | Caracter | Booleano
-Tipo_dato -> int | bool | char | float
-Booleano -> true | false
-Numero_int -> VALOR
-Numero_float -> DECIMAL
-Caracter -> LETRA
-Id -> ID
+Factor -> ID ArrayIndexOpt | Valor | LPAREN Expresion RPAREN
+ArrayIndexOpt -> LBRACKET Expresion RBRACKET | λ
+Op_relacional -> EQ | NEQ | LT | GT | LEQ | GEQ
+Valor -> VALOR | CARACTER | Booleano
+Booleano -> TRUE | FALSE

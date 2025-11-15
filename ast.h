@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 // small implementation for assignment, bool operations, arithmetic operations and function execution
 typedef struct Node Node;
 typedef struct List List;
@@ -32,3 +34,4 @@ Node *new_binary_op_node(const char *type, Node *left, Node *right);
 Node *new_unary_op_node(const char *type, Node *operand);
 Node *new_function_call_node(const char *name, List *args);
 Node *new_assignment_node(const char *name, Node *value);
+void ast_print(Node *node, int indent);
