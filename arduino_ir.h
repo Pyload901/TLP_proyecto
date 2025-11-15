@@ -56,6 +56,7 @@ typedef enum {
     // Function operations
     ARD_OP_CALL,            // args: func_index
     ARD_OP_RETURN,
+    ARD_OP_CALL_CUSTOM,     // args: string_index (function name)
     ARD_OP_SETUP_START,     // marks beginning of setup()
     ARD_OP_SETUP_END,       // marks end of setup()
     ARD_OP_LOOP_START,      // marks beginning of loop()
@@ -68,6 +69,11 @@ typedef enum {
     // Array operations
     ARD_OP_LOAD_ARRAY,      // args: var_index, index -> push value
     ARD_OP_STORE_ARRAY,     // args: var_index, index, value
+    
+    // Control flow
+    ARD_OP_IF_START,        // args: condition_string_index
+    ARD_OP_IF_END,          // marks end of if block
+    ARD_OP_VAR_DECL,        // args: var_name_string_index, initial_value
     
     // Utility
     ARD_OP_POP,

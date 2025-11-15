@@ -40,6 +40,23 @@ Custom Language → Lexer → Parser → AST → Arduino Compiler → Arduino IR
 - Serial communication (`Serial.begin`, `Serial.print`)
 - Timing functions (`delay`, `millis`)
 
+### Custom High-Level Robot Functions
+
+The VM includes predefined high-level robot control functions that automatically translate to multiple Arduino operations:
+
+- **`avanzar()`** - Move robot forward (both motors forward)
+- **`retroceder()`** - Move robot backward (both motors backward)
+- **`girar_izquierda()`** - Turn robot left (left motor backward, right forward)
+- **`girar_derecha()`** - Turn robot right (left motor forward, right backward)
+- **`detener()`** - Stop all motors
+- **`encender_led()`** - Turn on LED (pin 13)
+- **`apagar_led()`** - Turn off LED (pin 13)
+- **`leer_sensor()`** - Read sensor value from analog pin A0
+
+These functions automatically set up the necessary pin configurations and generate the appropriate `digitalWrite()` calls.
+
+- Timing functions (`delay`, `millis`)
+
 ## Building
 
 ### Prerequisites
@@ -74,7 +91,45 @@ make clean         # Clean build files
 ./arduino_translator example_program.txt my_arduino_code.ino
 ```
 
-### Example Input Program
+### Example Input Program with Custom Functions
+
+```
+start
+  // Robot control program
+  int sensor_value = 0;
+  bool obstacle_detected = false;
+
+  // Initialize robot
+  exec Serial_begin(9600);
+
+  // Main robot behavior loop
+  while (!obstacle_detected) start
+    // Read sensor
+    sensor_value = exec leer_sensor();
+    exec Serial_print(sensor_value);
+
+    if (sensor_value > 500) start
+      // Obstacle detected - avoid it
+      exec detener();
+      exec encender_led();
+      exec delay(200);
+      exec girar_derecha();
+      exec delay(800);
+      exec apagar_led();
+    end else start
+      // Path clear - move forward
+      exec avanzar();
+    end
+
+    exec delay(100);
+  end
+
+  // Stop robot
+  exec detener();
+end
+```
+
+### Basic Example Input Program
 
 ```
 start
@@ -129,6 +184,8 @@ void loop() {
 
 ## Language Mapping
 
+### Basic Arduino Functions
+
 | Custom Language               | Arduino C++              |
 | ----------------------------- | ------------------------ |
 | `exec pinMode(pin, mode)`     | `pinMode(pin, mode)`     |
@@ -138,6 +195,26 @@ void loop() {
 | `exec Serial_begin(baud)`     | `Serial.begin(baud)`     |
 | `exec Serial_print(val)`      | `Serial.print(val)`      |
 | `exec delay(ms)`              | `delay(ms)`              |
+
+### High-Level Robot Functions
+
+| Custom Language          | Generated Arduino Code                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `exec avanzar()`         | `digitalWrite(3,HIGH); digitalWrite(4,LOW); digitalWrite(5,HIGH); digitalWrite(6,LOW);` |
+| `exec retroceder()`      | `digitalWrite(3,LOW); digitalWrite(4,HIGH); digitalWrite(5,LOW); digitalWrite(6,HIGH);` |
+| `exec girar_izquierda()` | Left motor backward, right motor forward                                                |
+| `exec girar_derecha()`   | Left motor forward, right motor backward                                                |
+| `exec detener()`         | `digitalWrite(3,LOW); digitalWrite(4,LOW); digitalWrite(5,LOW); digitalWrite(6,LOW);`   |
+| `exec encender_led()`    | `digitalWrite(13, HIGH);`                                                               |
+| `exec apagar_led()`      | `digitalWrite(13, LOW);`                                                                |
+| `exec leer_sensor()`     | `return analogRead(A0);`                                                                |
+
+### Motor Pin Configuration
+
+- **Motor A**: Pins 3, 4 (Left motor)
+- **Motor B**: Pins 5, 6 (Right motor)
+- **LED**: Pin 13
+- **Sensor**: Analog pin A0
 
 ## Implementation Details
 

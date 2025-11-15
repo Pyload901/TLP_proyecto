@@ -1,0 +1,23 @@
+// Simple robot movement program
+int main() {
+    // Move robot forward
+    exec avanzar();
+    delay(2000);
+    int hola = 0;
+    
+    // Turn right
+    exec girar_derecha();
+    delay(1000);
+    if(hola == 0) start
+        exec girar_derecha();
+    end
+    
+    // Move backward
+    exec retroceder();
+    delay(1500);
+    
+    // Stop the robot
+    exec detener();
+    
+    return 0;
+}

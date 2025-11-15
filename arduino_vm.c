@@ -132,7 +132,66 @@ static void generate_binary_op(ArduinoVM *vm, const char *op) {
 int arduino_vm_run(ArduinoVM *vm, ArduinoModule *module) {
     // Generate Arduino program header
     fprintf(vm->output, "// Generated Arduino code\n");
-    fprintf(vm->output, "// Translated from custom language\n\n");
+    fprintf(vm->output, "// Translated from custom language\n");
+    fprintf(vm->output, "// High-level robot control functions\n\n");
+    
+    // Generate custom function definitions
+    fprintf(vm->output, "// Custom robot control functions\n");
+    
+    fprintf(vm->output, "void avanzar() {\n");
+    fprintf(vm->output, "  // Move forward - both motors forward\n");
+    fprintf(vm->output, "  digitalWrite(3, HIGH);  // Left motor forward\n");
+    fprintf(vm->output, "  digitalWrite(4, LOW);\n");
+    fprintf(vm->output, "  digitalWrite(5, HIGH);  // Right motor forward\n");
+    fprintf(vm->output, "  digitalWrite(6, LOW);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void retroceder() {\n");
+    fprintf(vm->output, "  // Move backward - both motors backward\n");
+    fprintf(vm->output, "  digitalWrite(3, LOW);   // Left motor backward\n");
+    fprintf(vm->output, "  digitalWrite(4, HIGH);\n");
+    fprintf(vm->output, "  digitalWrite(5, LOW);   // Right motor backward\n");
+    fprintf(vm->output, "  digitalWrite(6, HIGH);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void girar_izquierda() {\n");
+    fprintf(vm->output, "  // Turn left - left motor backward, right motor forward\n");
+    fprintf(vm->output, "  digitalWrite(3, LOW);   // Left motor backward\n");
+    fprintf(vm->output, "  digitalWrite(4, HIGH);\n");
+    fprintf(vm->output, "  digitalWrite(5, HIGH);  // Right motor forward\n");
+    fprintf(vm->output, "  digitalWrite(6, LOW);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void girar_derecha() {\n");
+    fprintf(vm->output, "  // Turn right - left motor forward, right motor backward\n");
+    fprintf(vm->output, "  digitalWrite(3, HIGH);  // Left motor forward\n");
+    fprintf(vm->output, "  digitalWrite(4, LOW);\n");
+    fprintf(vm->output, "  digitalWrite(5, LOW);   // Right motor backward\n");
+    fprintf(vm->output, "  digitalWrite(6, HIGH);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void detener() {\n");
+    fprintf(vm->output, "  // Stop all motors\n");
+    fprintf(vm->output, "  digitalWrite(3, LOW);\n");
+    fprintf(vm->output, "  digitalWrite(4, LOW);\n");
+    fprintf(vm->output, "  digitalWrite(5, LOW);\n");
+    fprintf(vm->output, "  digitalWrite(6, LOW);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void encender_led() {\n");
+    fprintf(vm->output, "  // Turn on LED\n");
+    fprintf(vm->output, "  digitalWrite(13, HIGH);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "void apagar_led() {\n");
+    fprintf(vm->output, "  // Turn off LED\n");
+    fprintf(vm->output, "  digitalWrite(13, LOW);\n");
+    fprintf(vm->output, "}\n\n");
+    
+    fprintf(vm->output, "int leer_sensor() {\n");
+    fprintf(vm->output, "  // Read sensor from analog pin A0\n");
+    fprintf(vm->output, "  return analogRead(A0);\n");
+    fprintf(vm->output, "}\n\n");
     
     // Generate variable declarations
     for (int i = 0; i < module->var_count; i++) {
@@ -540,6 +599,15 @@ setup_end:
                 break;
             }
             
+            case ARD_OP_CALL_CUSTOM: {
+                int str_idx = loop->chunk.code[ip++];
+                if (str_idx < loop->string_count) {
+                    write_indent(vm);
+                    fprintf(vm->output, "%s();\n", loop->strings[str_idx]);
+                }
+                break;
+            }
+            
             case ARD_OP_POP: {
                 pop(vm);
                 break;
@@ -549,6 +617,29 @@ setup_end:
                 int str_idx = loop->chunk.code[ip++];
                 write_indent(vm);
                 fprintf(vm->output, "// %s\n", loop->strings[str_idx]);
+                break;
+            }
+            
+            case ARD_OP_VAR_DECL: {
+                int name_idx = loop->chunk.code[ip++];
+                int initial_value = loop->chunk.code[ip++];
+                write_indent(vm);
+                fprintf(vm->output, "int %s = %d;\n", loop->strings[name_idx], initial_value);
+                break;
+            }
+            
+            case ARD_OP_IF_START: {
+                int cond_idx = loop->chunk.code[ip++];
+                write_indent(vm);
+                fprintf(vm->output, "if (%s) {\n", loop->strings[cond_idx]);
+                vm->indent_level++;
+                break;
+            }
+            
+            case ARD_OP_IF_END: {
+                vm->indent_level--;
+                write_indent(vm);
+                fprintf(vm->output, "}\n");
                 break;
             }
             

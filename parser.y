@@ -3,6 +3,9 @@
   #include <stdlib.h>
   #include <string.h>
 
+  /* ===== Global variable to store parsed AST ===== */
+  AstNode* program_root = NULL;
+
   /* ===== AST ===== */
   typedef enum {
     NK_PROGRAM, NK_FUNC, NK_BLOCK,
@@ -137,14 +140,14 @@ Programa
                               if ($2 && $2->k==NK_PROGRAM) { 
                                 for(int i=0;i<$2->program.items->size;i++) list_push(xs,$2->program.items->items[i]); 
                               } 
-                              $$ = mk_program(xs); }
+                              $$ = mk_program(xs); program_root = $$; }
   | Declaracion_funcion Programa
                             { AstList* xs = list_new(); list_push(xs, $1);
                               if ($2 && $2->k==NK_PROGRAM) {
                                 for(int i=0;i<$2->program.items->size;i++) list_push(xs,$2->program.items->items[i]);
                               }
-                              $$ = mk_program(xs); }
-  | /* empty */             { $$ = mk_program(list_new()); }
+                              $$ = mk_program(xs); program_root = $$; }
+  | /* empty */             { $$ = mk_program(list_new()); program_root = $$; }
   ;
 
 Declaracion_funcion
@@ -310,10 +313,10 @@ Id : ID { $$ = $1; } ;
 
 Valor
   : VALOR     { $$ = mk_lit_i($1); }
-  : DECIMAL   { $$ = mk_lit_f($1); }
-  : LETRA     { $$ = mk_lit_c($1); }
-  : TRUE      { $$ = mk_lit_b(1); }
-  : FALSE     { $$ = mk_lit_b(0); }
+  | DECIMAL   { $$ = mk_lit_f($1); }
+  | LETRA     { $$ = mk_lit_c($1); }
+  | TRUE      { $$ = mk_lit_b(1); }
+  | FALSE     { $$ = mk_lit_b(0); }
   ;
 
 /* ================= EXPRESIONES con precedencia ================= */

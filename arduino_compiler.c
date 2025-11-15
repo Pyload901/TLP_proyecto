@@ -289,6 +289,119 @@ void compile_var_declaration(ArduinoCompiler *comp, SimpleAstNode *node) {
     arduino_module_add_variable(comp->module, var);
 }
 
+// Custom function mappings for high-level robot commands
+void compile_custom_function(ArduinoCompiler *comp, const char *func_name) {
+    if (strcmp(func_name, "avanzar") == 0) {
+        // Move forward - activate both motors forward
+        // Motor A forward (pins 3, 4)
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 3);  // Motor A pin 1
+        arduino_chunk_emit(&comp->current_func->chunk, 1);  // HIGH
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 4);  // Motor A pin 2
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // LOW
+        
+        // Motor B forward (pins 5, 6)
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 5);  // Motor B pin 1
+        arduino_chunk_emit(&comp->current_func->chunk, 1);  // HIGH
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 6);  // Motor B pin 2
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // LOW
+        
+    } else if (strcmp(func_name, "retroceder") == 0) {
+        // Move backward - activate both motors backward
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 3);  // Motor A pin 1
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // LOW
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 4);  // Motor A pin 2
+        arduino_chunk_emit(&comp->current_func->chunk, 1);  // HIGH
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 5);  // Motor B pin 1
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // LOW
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 6);  // Motor B pin 2
+        arduino_chunk_emit(&comp->current_func->chunk, 1);  // HIGH
+        
+    } else if (strcmp(func_name, "girar_izquierda") == 0) {
+        // Turn left - left motor backward, right motor forward
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 3);  // Left motor backward
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 4);
+        arduino_chunk_emit(&comp->current_func->chunk, 1);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 5);  // Right motor forward
+        arduino_chunk_emit(&comp->current_func->chunk, 1);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 6);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+    } else if (strcmp(func_name, "girar_derecha") == 0) {
+        // Turn right - left motor forward, right motor backward
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 3);  // Left motor forward
+        arduino_chunk_emit(&comp->current_func->chunk, 1);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 4);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 5);  // Right motor backward
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 6);
+        arduino_chunk_emit(&comp->current_func->chunk, 1);
+        
+    } else if (strcmp(func_name, "detener") == 0) {
+        // Stop all motors
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 3);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 4);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 5);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 6);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);
+        
+    } else if (strcmp(func_name, "encender_led") == 0) {
+        // Turn on LED
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 13); // LED pin
+        arduino_chunk_emit(&comp->current_func->chunk, 1);  // HIGH
+        
+    } else if (strcmp(func_name, "apagar_led") == 0) {
+        // Turn off LED
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
+        arduino_chunk_emit(&comp->current_func->chunk, 13); // LED pin
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // LOW
+        
+    } else if (strcmp(func_name, "leer_sensor") == 0) {
+        // Read sensor value from analog pin A0
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_ANALOG_READ);
+        arduino_chunk_emit(&comp->current_func->chunk, 0);  // A0 pin
+    }
+}
+
 // Compile exec function calls
 void compile_exec_call(ArduinoCompiler *comp, SimpleAstNode *node) {
     if (node->k != SIMPLE_NK_EXEC) return;
@@ -296,6 +409,24 @@ void compile_exec_call(ArduinoCompiler *comp, SimpleAstNode *node) {
     // Map common function calls to Arduino operations
     const char *func_name = node->exec.name;
     
+    // First check for custom high-level functions
+    if (strcmp(func_name, "avanzar") == 0 ||
+        strcmp(func_name, "retroceder") == 0 ||
+        strcmp(func_name, "girar_izquierda") == 0 ||
+        strcmp(func_name, "girar_derecha") == 0 ||
+        strcmp(func_name, "detener") == 0 ||
+        strcmp(func_name, "encender_led") == 0 ||
+        strcmp(func_name, "apagar_led") == 0 ||
+        strcmp(func_name, "leer_sensor") == 0) {
+        
+        // Add function name to strings and emit custom call
+        int str_idx = arduino_function_add_string(comp->current_func, func_name);
+        arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_CALL_CUSTOM);
+        arduino_chunk_emit(&comp->current_func->chunk, str_idx);
+        return;
+    }
+    
+    // Then check for direct Arduino function mappings
     if (strcmp(func_name, "digitalWrite") == 0) {
         arduino_chunk_emit(&comp->current_func->chunk, ARD_OP_DIGITAL_WRITE);
         arduino_chunk_emit(&comp->current_func->chunk, 13); // default pin
@@ -424,8 +555,25 @@ ArduinoModule* compile_to_arduino(void *program_ptr) {
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_SERIAL_BEGIN);
     arduino_chunk_emit(&comp.current_func->chunk, 9600);
     
+    // Setup motor pins as outputs
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_PIN_MODE);
-    arduino_chunk_emit(&comp.current_func->chunk, 13);        // LED pin
+    arduino_chunk_emit(&comp.current_func->chunk, 3);        // Motor A pin 1
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OUTPUT);
+    
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_PIN_MODE);
+    arduino_chunk_emit(&comp.current_func->chunk, 4);        // Motor A pin 2
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OUTPUT);
+    
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_PIN_MODE);
+    arduino_chunk_emit(&comp.current_func->chunk, 5);        // Motor B pin 1
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OUTPUT);
+    
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_PIN_MODE);
+    arduino_chunk_emit(&comp.current_func->chunk, 6);        // Motor B pin 2
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OUTPUT);
+    
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_PIN_MODE);
+    arduino_chunk_emit(&comp.current_func->chunk, 13);       // LED pin
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OUTPUT);
     
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_SETUP_END);
@@ -447,20 +595,32 @@ ArduinoModule* compile_to_arduino(void *program_ptr) {
         }
     }
     
-    // Add default loop operations (LED blink example)
-    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_DIGITAL_WRITE);
-    arduino_chunk_emit(&comp.current_func->chunk, 13);   // pin
-    arduino_chunk_emit(&comp.current_func->chunk, 1);    // HIGH
+    // Add demo robot movement sequence
+    int str_idx;
+    
+    // Move forward
+    str_idx = arduino_function_add_string(&comp.module->loop_func, "avanzar");
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_CALL_CUSTOM);
+    arduino_chunk_emit(&comp.current_func->chunk, str_idx);
     
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_DELAY);
     arduino_chunk_emit(&comp.current_func->chunk, 1000); // 1 second
     
-    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_DIGITAL_WRITE);
-    arduino_chunk_emit(&comp.current_func->chunk, 13);   // pin
-    arduino_chunk_emit(&comp.current_func->chunk, 0);    // LOW
+    // Turn right
+    str_idx = arduino_function_add_string(&comp.module->loop_func, "girar_derecha");
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_CALL_CUSTOM);
+    arduino_chunk_emit(&comp.current_func->chunk, str_idx);
     
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_DELAY);
-    arduino_chunk_emit(&comp.current_func->chunk, 1000); // 1 second
+    arduino_chunk_emit(&comp.current_func->chunk, 500); // 0.5 seconds
+    
+    // Stop
+    str_idx = arduino_function_add_string(&comp.module->loop_func, "detener");
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_CALL_CUSTOM);
+    arduino_chunk_emit(&comp.current_func->chunk, str_idx);
+    
+    arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_DELAY);
+    arduino_chunk_emit(&comp.current_func->chunk, 500); // 0.5 seconds
     
     arduino_chunk_emit(&comp.current_func->chunk, ARD_OP_LOOP_END);
     

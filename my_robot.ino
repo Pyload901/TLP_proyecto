@@ -58,8 +58,6 @@ int leer_sensor() {
   return analogRead(A0);
 }
 
-int ledPin = 13;
-
 void setup() {
   Serial.begin(9600);
   pinMode(3, OUTPUT);
@@ -70,12 +68,15 @@ void setup() {
 }
 
 void loop() {
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);
   avanzar();
-  delay(1000);
+  delay(2000);
+  int hola = 0;
   girar_derecha();
-  delay(500);
+  delay(1000);
+  if (hola == 0) {
+    girar_derecha();
+  }
+  retroceder();
+  delay(1500);
   detener();
-  delay(500);
 }

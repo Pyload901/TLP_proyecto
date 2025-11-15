@@ -1,0 +1,34 @@
+start
+  // Robot control program example
+  int sensor_value = 0;
+  bool moving = true;
+  
+  // Initialize robot
+  exec Serial_begin(9600);
+  
+  // Main robot behavior loop
+  while (moving) start
+    // Read sensor
+    sensor_value = exec leer_sensor();
+    exec Serial_print(sensor_value);
+    
+    if (sensor_value > 500) start
+      // Obstacle detected - turn and continue
+      exec detener();
+      exec delay(200);
+      exec girar_derecha();
+      exec delay(800);
+      exec avanzar();
+    end else start
+      // Path clear - move forward
+      exec avanzar();
+      exec encender_led();
+    end
+    
+    exec delay(100);
+  end
+  
+  // Stop robot
+  exec detener();
+  exec apagar_led();
+end
