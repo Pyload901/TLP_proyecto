@@ -10,6 +10,8 @@ int main() {
     delay(1000);
     if(hola == 0) start
         exec girar_derecha();
+        exec girar_izquierda();
+        exec funcion_feka();
     end
     
     // Move backward

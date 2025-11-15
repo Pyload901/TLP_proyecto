@@ -1,5 +1,5 @@
 // Generated Arduino code
-// Translated from custom language
+// Translated from custom robot language
 // High-level robot control functions
 
 // Custom robot control functions
@@ -73,8 +73,10 @@ void loop() {
   int hola = 0;
   girar_derecha();
   delay(1000);
-  if (hola == 0) {
+  if (hola hola 0) {
     girar_derecha();
+    girar_izquierda();
+    funcion_feka();
   }
   retroceder();
   delay(1500);
