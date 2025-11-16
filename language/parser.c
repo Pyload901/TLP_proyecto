@@ -30,13 +30,14 @@ Node* parse_for();
 Node* parse_while();
 Node* parse_if();
 Node* parse_exec_fun();
-// List* parse_args();
+Node *parse_return();
+List* parse_args();
 
 bool startsNonTerminal() {
     return current_token == TIPO || current_token == INTVAL || current_token == DOUBLEVAL ||
            current_token == TRUE || current_token == FALSE || current_token == LPAREN || 
            current_token == ID || current_token == FOR || current_token == WHILE ||
-           current_token == IF;
+           current_token == IF || current_token == EXEC || current_token == RETURN;
 }
 
 static char *consume_identifier(void) {
@@ -93,6 +94,15 @@ Node* parse_instruction() {
     } else if (current_token == IF){
         accept(IF);
         return parse_if();
+    } else if (current_token == EXEC){
+        accept(EXEC);
+        Node* exec_node = parse_exec_fun();
+        expect(SEMICOLON);
+        return exec_node;
+    } else if (current_token == RETURN){
+        Node* return_node = parse_return();
+        expect(SEMICOLON);
+        return return_node;
     } else {
         die(0);
         return NULL;
@@ -142,6 +152,29 @@ Node* parse_if(){
     Node* if_node = N_if(cond_expr, then_branch, else_branch);
     return if_node;
 }
+
+Node* parse_exec_fun() {
+    char *func_name = consume_identifier();
+    expect(LPAREN);
+    List* args = parse_args();
+    expect(RPAREN);
+    Node* exec_node = N_exec_fun(func_name, args);
+    return exec_node;
+}
+List* parse_args() {
+    List* args = L_new();
+    L_push(args, parse_expression());
+    while (accept(COMMA)) {
+        L_push(args, parse_expression());
+    }
+    return args;
+}
+Node* parse_return() {
+    expect(RETURN);
+    Node* expr = parse_expression();
+    return N_return(expr);
+}
+
 Node* parse_decla(char *typename) {
     char *id_name = consume_identifier();
     if (current_token == SEMICOLON) {

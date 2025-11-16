@@ -40,5 +40,7 @@ Node *N_decla(char *typename, char* varname, Node* initial_value);
 Node *N_for(Node *init, Node *cond, Node *update, Node *body);
 Node *N_while(Node *cond, Node *body);
 Node *N_if(Node *cond, Node *then_branch, Node *else_branch);
+Node *N_exec_fun(char *func_name, List *args);
+Node *N_return(Node *expr);
 /* util */
 void  ast_print(Node *n, int indent);

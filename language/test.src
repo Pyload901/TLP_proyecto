@@ -13,4 +13,6 @@ start
   end else start
     x = 1;
   end
+  exec hola(x,y);
+  return 0;
 end

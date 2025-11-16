@@ -92,6 +92,17 @@ Node* N_if(Node *cond, Node *then_branch, Node *else_branch) {
     node->extra = else_branch;
     return node;
 }
+Node *N_exec_fun(char *func_name, List *args) {
+    Node *node = allocate_node("EXEC");
+    node->value = strdup(func_name);
+    node->list = args;
+    return node;
+}
+Node *N_return(Node *expr) {
+    Node *node = allocate_node("RETURN");
+    node->left = expr;
+    return node;
+}
 List *L_new(void) {
     List *list = (List *) malloc(sizeof(List));
     list->size = 0;
