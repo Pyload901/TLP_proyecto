@@ -1,0 +1,5 @@
+start
+  int x=(2==2) and (3<4);
+  int y=2;
+  int v = x + y;
+end

@@ -9,21 +9,28 @@ Node *root; // output
 %union {
     long ival;
     char *id;
+    double dval;
+    bool bval;
     Node *node;
     List *list;
 }
 %token START
 %token END
-%token <ival> VALOR
-%token <id> ID
-%token SUMA RESTA MULT DIV
+%token INTVAL
+%token DOUBLEVAL
+%token TRUE FALSE 
+%token ID
+%token ADD MINUS MULT DIV
 %token FUNCTION EXEC
 %token LPAREN RPAREN COMMA SEMICOLON
-%token TRUE FALSE OR AND NOT LT LEQ GT GEQ EQ NEQ
+%token OR AND NOT LT LEQ GT GEQ EQ NEQ
 %token ASSIGN
 
 %type <node> Programa Asignacion Expresion Bloque BloqueAux
 %type <id> ID
+%type <ival> INTVAL
+%type <dval> DOUBLEVAL
+%type <bval> TRUE FALSE
 
 %%
 Programa : Bloque { root = $1;}
@@ -34,7 +41,7 @@ BloqueAux: Asignacion SEMICOLON { $$ = $1; }
         ;
 Asignacion: ID ASSIGN Expresion { $$ = new_assignment_node($1, $3); }
             ;
-Expresion: VALOR { $$ = new_int_node($1); }
+Expresion: INTVAL { $$ = new_int_node($1); }
         ;
 
 %%
@@ -45,7 +52,7 @@ void yyerror(const char *s) {
 void ast_print(Node *node, int indent) {
     if (node == NULL) return;
     for (int i = 0; i < indent; i++) printf("  ");
-    if(strcmp(node->type, "VALOR") == 0) {
+    if(strcmp(node->type, "INTVAL") == 0) {
         printf("INT: %d\n", node->ivalue);
     } else if (strcmp(node->type, "ASSIGN") == 0) {
         printf("ASSIGN: %s\n", node->value);

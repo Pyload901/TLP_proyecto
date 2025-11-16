@@ -3,18 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-typedef struct Node Node;
-typedef struct List List;
-    
-
-#include "parser.tab.h"
+#include <stdbool.h>
+#include "tokens.h"
+extern yystype yylval;
 %}
 
 %%
 "start"              { return START; }
 "end"              { return END; }
-"true"              { return TRUE; }
-"false"             { return FALSE; }
+"true"              { yylval.bval = true; return TRUE; }
+"false"             { yylval.bval = false; return FALSE; }
 "if"                { return IF; }
 "else"              { return ELSE; }
 "while"             { return WHILE; }
@@ -42,11 +40,6 @@ typedef struct List List;
 "+"                 { return ADD; }
 "-"                 { return MINUS; }
 "="                 { return ASSIGN; }
-
-[-+]?[0-9]+   { yylval.ival = atol(yytext); return VALOR; }
-[a-zA-Z_][a-zA-Z0-9_]*  { yylval.id = strdup(yytext); return ID; }
-
-\'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { return CARACTER; }
 ";" { return SEMICOLON; }
 
 "("     { return LPAREN; }
@@ -57,6 +50,12 @@ typedef struct List List;
 "]"     { return RBRACKET; }
 ","     { return COMMA; }
 
+[-+]?[0-9]+ { yylval.ival = atol(yytext); return INTVAL; }
+[-+]?[0-9]+\.[0-9]+ { yylval.dval = atof(yytext); return DOUBLEVAL; }
+[a-zA-Z_][a-zA-Z0-9_]*  { yylval.id = strdup(yytext); return ID; }
+
+\'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { return CARACTER; }
+
 
 "//".*    {  }
 [ \t\n]+               { /* Ignorar espacios en blanco */ }
@@ -64,11 +63,11 @@ typedef struct List List;
 .   { return ERROR; }
 %%
 char *token_names[] = {
- "nil", "VALOR","ID","TRUE","FALSE","IF","ELSE",
+ "nil", "INTVAL","ID","TRUE","FALSE","IF","ELSE",
  "WHILE","FOR","TIPO","COMENTARIO","CARACTER",
  "FUNCTION","MULT","DIV","MODULO","SUMA","RESTA",
  "SEMICOLON","LPAREN","RPAREN","LBRACE","RBRACE","LBRACKET",
  "RBRACKET","ASSIGN","ERROR","RETURN","EXEC","COMMA",
  "AND","OR","NOT","LT","GT","EQ","NEQ","GEQ","LEQ",
- "START","END"
+ "START","END", "DOUBLEVAL"
 };

@@ -22,7 +22,7 @@ Argumentos -> Expresion ArgumentosAux | λ
 ArgumentosAux -> COMMA Expresion ArgumentosAux | λ
 
 Expresion -> OrExpresion
-OrExpresion -> AndExpresion OrExpresionAux
+OrExpresion -> AndExpresion OrExpresionAux | (AndExpresion) OrExpresionAux
 OrExpresionAux -> OR AndExpresion OrExpresionAux | λ
 AndExpresion -> NotExpresion AndExpresionAux
 AndExpresionAux -> AND NotExpresion AndExpresionAux | λ
@@ -39,5 +39,5 @@ Termino -> MINUS Factor | Factor
 Factor -> ID ArrayIndexOpt | Valor | LPAREN Expresion RPAREN
 ArrayIndexOpt -> LBRACKET Expresion RBRACKET | λ
 Op_relacional -> EQ | NEQ | LT | GT | LEQ | GEQ
-Valor -> VALOR | CARACTER | Booleano
+Valor -> INTVAL | DOUBLEVAL | CARACTER | Booleano
 Booleano -> TRUE | FALSE
