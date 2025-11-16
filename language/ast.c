@@ -5,9 +5,9 @@
 #include <stdbool.h>
 #include "ast.h"
 
-static Node *allocate_node(const char *type) {
+static Node *allocate_node(const char *node_type) {
     Node *node = (Node *) calloc(1, sizeof(Node));
-    node->type = type;
+    node->node_type = node_type;
     node->left = NULL;
     node->right = NULL;
     node->extra = NULL;
@@ -15,8 +15,8 @@ static Node *allocate_node(const char *type) {
     return node;
 }
 
-Node *N(const char *type) {
-    return allocate_node(type);
+Node *N(const char *node_type) {
+    return allocate_node(node_type);
 }
 Node *N_id(char *name) {
     Node *node = allocate_node("ID");
@@ -38,8 +38,8 @@ Node *N_bool(bool value) {
     node->bvalue = value;
     return node;
 }
-Node *N_bin(const char *type, Node *left, Node *right) {
-    Node *node = allocate_node(type);
+Node *N_bin(const char *node_type, Node *left, Node *right) {
+    Node *node = allocate_node(node_type);
     node->left = left;
     node->right = right;
     return node;
@@ -55,9 +55,41 @@ Node *N_assign(Node *left, Node *right) {
     node->right = right;
     return node;
 }
+Node *N_decla(char *typename, char* varname, Node* initial_value) {
+    Node *node = allocate_node("DECLARACION");
+    node->value = strdup(varname);
+    Node* type_node = allocate_node("TIPO");
+    type_node->value = strdup(typename);
+    node->left = type_node;
+    node->right = initial_value;
+    return node;
+}
 Node *N_block(List *stmts) {
     Node *node = allocate_node("BLOCK");
     node->list = stmts;
+    return node;
+}
+Node* N_for(Node *init, Node *cond, Node *update, Node *body) {
+    Node *node = allocate_node("FOR");
+    node->left = init;
+    node->right = cond;
+    node->extra = update;
+    node->list = L_new();
+    L_push(node->list, body);
+    return node;
+}
+Node* N_while(Node *cond, Node *body) {
+    Node *node = allocate_node("WHILE");
+    node->left = cond;
+    node->list = L_new();
+    L_push(node->list, body);
+    return node;
+}
+Node* N_if(Node *cond, Node *then_branch, Node *else_branch) {
+    Node *node = allocate_node("IF");
+    node->left = cond;
+    node->right = then_branch;
+    node->extra = else_branch;
     return node;
 }
 List *L_new(void) {
@@ -78,15 +110,22 @@ void L_push(List *list, Node *item) {
 static void pindent(int k){ while(k--) putchar(' '); }
 static void printVal(Node *n){
   if (!n) return;
-  if (strcmp(n->type,"INTVAL")==0) printf("=%ld", n->ivalue);
-  else if (strcmp(n->type,"DOUBLEVAL")==0) printf("=%f", n->fvalue);
-  else if (strcmp(n->type,"BOOLEAN")==0) printf("=%s", n->bvalue ? "true" : "false");
-  else if (strcmp(n->type,"ID")==0) printf("=%s", n->value);
+  if (strcmp(n->node_type,"INTVAL")==0) printf("=%ld", n->ivalue);
+  else if (strcmp(n->node_type,"DOUBLEVAL")==0) printf("=%f", n->fvalue);
+  else if (strcmp(n->node_type,"BOOLEAN")==0) printf("=%s", n->bvalue ? "true" : "false");
+  else if (strcmp(n->node_type,"ID")==0) printf("=%s", n->value);
+  else if (strcmp(n->node_type,"DECLARACION")==0) {
+    printf("=%s", n->value);
+    if (n->right) {
+        putchar(',');
+        printVal(n->right);
+    }
+  };
 }
 void ast_print(Node *n, int indent){
   if (!n){ pindent(indent); puts("(null)"); return; }
   pindent(indent);
-  printf("%s", n->type);
+  printf("%s", n->node_type);
   printVal(n);
 //   if (n->value) printf("(%s)", n->value);
 //   if (n->type && strcmp(n->type,"INTVAL")==0) printf("=%ld", n->value);

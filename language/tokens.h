@@ -49,6 +49,7 @@ enum {
 };
 
 typedef union {
+  char *type;
   long  ival;
   double dval;
   bool  bval;

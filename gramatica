@@ -6,10 +6,19 @@ Retorno_funcion -> RETURN Expresion
 Bloque -> START BloqueAux END
 BloqueAux -> Instruccion BloqueAux | λ
 Instruccion -> Asignacion SEMICOLON | Declaracion SEMICOLON | For | While | If | Exec_funcion SEMICOLON | Retorno_funcion SEMICOLON
-Asignacion -> ID ASSIGN Expresion | ID ASSIGN LBRACKET Lista_valores RBRACKET
+
+Asignacion -> ID ASSIGN AsignacionAux
+AsignacionAux -> Expresion
+                | LBRACKET Lista_valores RBRACKET
+Declaracion -> TIPO ID DeclaracionAux
+DeclaracionAux -> ASSIGN DeclaracionAssignAux
+                    | LBRACKET Numero_int RBRACKET
+                    | λ
+DeclaracionAssignAux -> Expresion
+                    | LBRACKET Lista_valores RBRACKET
+                    
 Lista_valores -> Expresion Lista_valores_aux | λ
 Lista_valores_aux -> COMMA Expresion Lista_valores_aux | λ
-Declaracion -> TIPO ID | TIPO ID ASSIGN Expresion | TIPO ID LBRACKET Numero_int RBRACKET | TIPO ID LBRACKET Numero_int RBRACKET ASSIGN LBRACKET Lista_valores RBRACKET
 For -> FOR LPAREN Declaracion SEMICOLON Expresion SEMICOLON Asignacion RPAREN Bloque
 While -> WHILE LPAREN Expresion RPAREN Bloque
 
@@ -22,7 +31,7 @@ Argumentos -> Expresion ArgumentosAux | λ
 ArgumentosAux -> COMMA Expresion ArgumentosAux | λ
 
 Expresion -> OrExpresion
-OrExpresion -> AndExpresion OrExpresionAux | (AndExpresion) OrExpresionAux
+OrExpresion -> AndExpresion OrExpresionAux | AndExpresion OrExpresionAux
 OrExpresionAux -> OR AndExpresion OrExpresionAux | λ
 AndExpresion -> NotExpresion AndExpresionAux
 AndExpresionAux -> AND NotExpresion AndExpresionAux | λ

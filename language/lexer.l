@@ -17,9 +17,10 @@ extern yystype yylval;
 "else"              { return ELSE; }
 "while"             { return WHILE; }
 "for"               { return FOR; }
-"bool"              { return TIPO; }
-"char"              { return TIPO; }
-"int"               { return TIPO; }
+"bool"              { yylval.type = "bool"; return TIPO; }
+"char"              { yylval.type = "char"; return TIPO; }
+"int"               { yylval.type = "int"; return TIPO; }
+"float"             { yylval.type = "float"; return TIPO; }
 "proc"              { return FUNCTION; }
 "return"              { return RETURN; }
 "exec"             { return EXEC; }
