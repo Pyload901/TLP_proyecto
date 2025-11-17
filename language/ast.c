@@ -23,6 +23,12 @@ Node *N_id(char *name) {
     node->value = strdup(name);
     return node;
 }
+Node *N_id_array(char *name, long index) {
+    Node *node = allocate_node("ID_ARRAY");
+    node->value = strdup(name);
+    node->ivalue = index;
+    return node;
+}
 Node *N_char(char c) {
     Node *node = allocate_node("CARACTER");
     node->cvalue = c;

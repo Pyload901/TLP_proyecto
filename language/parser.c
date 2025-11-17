@@ -343,6 +343,12 @@ Node* parse_term_exp() {
         return N_bool(value);
     } else if (current_token == ID) {
         char* id_name = consume_identifier();
+        if (current_token == LBRACKET) {
+            expect(LBRACKET);
+            long index = consume_integer_value();
+            expect(RBRACKET);
+            return N_id_array(id_name, index);
+        }
         return N_id(id_name);
     } else if (current_token == CARACTER) {
         char cvalue = consume_char_value();
