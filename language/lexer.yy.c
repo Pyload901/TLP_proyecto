@@ -1003,7 +1003,7 @@ YY_RULE_SETUP
 case 42:
 YY_RULE_SETUP
 #line 58 "lexer.l"
-{ return CARACTER; }
+{ yylval.cval = yytext[1]; return CARACTER; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP

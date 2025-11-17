@@ -55,7 +55,7 @@ extern yystype yylval;
 [-+]?[0-9]+\.[0-9]+ { yylval.dval = atof(yytext); return DOUBLEVAL; }
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.id = strdup(yytext); return ID; }
 
-\'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { return CARACTER; }
+\'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { yylval.cval = yytext[1]; return CARACTER; }
 
 
 "//".*    {  }

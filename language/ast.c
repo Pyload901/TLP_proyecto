@@ -23,6 +23,11 @@ Node *N_id(char *name) {
     node->value = strdup(name);
     return node;
 }
+Node *N_char(char c) {
+    Node *node = allocate_node("CARACTER");
+    node->cvalue = c;
+    return node;
+}
 Node *N_int(long value) {
     Node *node = allocate_node("INTVAL");
     node->ivalue = value;
@@ -62,6 +67,16 @@ Node *N_decla(char *typename, char* varname, Node* initial_value) {
     type_node->value = strdup(typename);
     node->left = type_node;
     node->right = initial_value;
+    return node;
+}
+Node *N_decla_array(char *typename, char* varname, long array_size) {
+    Node *node = allocate_node("DECLARACION_ARRAY");
+    node->value = strdup(varname);
+    Node* type_node = allocate_node("TIPO");
+    type_node->value = strdup(typename);
+    node->left = type_node;
+    Node *size_node = N_int(array_size);
+    node->right = size_node;
     return node;
 }
 Node *N_block(List *stmts) {
@@ -116,6 +131,11 @@ Node *N_decla_fun(char *func_name, List *params, char *return_type, Node *body) 
     ret_type_node->value = strdup(return_type);
     node->left = ret_type_node;
     node->right = body;
+    return node;
+}
+Node *N_arr_vals(List *elements) {
+    Node *node = allocate_node("ARRAY_VALUES");
+    node->list = elements;
     return node;
 }
 List *L_new(void) {

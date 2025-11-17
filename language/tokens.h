@@ -53,6 +53,7 @@ typedef union {
   long  ival;
   double dval;
   bool  bval;
+  char cval;
   char *id;
 } yystype;
 

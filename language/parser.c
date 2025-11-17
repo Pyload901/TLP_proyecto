@@ -57,7 +57,38 @@ static char* consume_type_name(void) {
     next();
     return type_name;
 }
-
+static long consume_integer_value(void) {
+    if (current_token != INTVAL) {
+        die(INTVAL);
+    }
+    long value = yylval.ival;
+    next();
+    return value;
+}
+static double consume_double_value(void) {
+    if (current_token != DOUBLEVAL) {
+        die(DOUBLEVAL);
+    }
+    double value = yylval.dval;
+    next();
+    return value;
+}
+static bool consume_boolean_value(void) {
+    if (current_token != TRUE && current_token != FALSE) {
+        die(TRUE);
+    }
+    bool value = yylval.bval;
+    next();
+    return value;
+}
+static char consume_char_value(void) {
+    if (current_token != CARACTER) {
+        die(CARACTER);
+    }
+    char value = yylval.cval;
+    next();
+    return value;
+}
 Node* parse_program() {
     List* blocks = L_new();
     while (current_token != 0 && current_token != T_EOF) {
@@ -79,7 +110,6 @@ Node* parse_block() {
     return N_block(instructions);
 }
 Node* parse_instruction() {
-    printf("next token: %d\n", current_token);
     if (current_token == TIPO) {
         char *type_name = consume_type_name();
         Node* decl =  parse_decla(type_name);
@@ -195,7 +225,6 @@ List* parse_decla_fun_args() {
 }
 Node* parse_decla_fun() {
     char* return_type = consume_type_name();
-    printf("next token in decla_fun: %d\n", current_token);
     expect(FUNCTION);
     char *func_name = consume_identifier();
     expect(LPAREN);
@@ -210,18 +239,34 @@ Node* parse_decla(char *typename) {
     char *id_name = consume_identifier();
     if (current_token == SEMICOLON) {
         return N_decla(typename, id_name, NULL);
-    } else{
-        expect(ASSIGN);
-        Node* initial_value = parse_expression();
+    } else if (current_token == ASSIGN) {
+        Node* initial_value = parse_assign(id_name);
         return N_decla(typename, id_name, initial_value);
+    } else {
+        expect(LBRACKET);
+        long size = consume_integer_value();
+        expect(RBRACKET);
+        return N_decla_array(typename, id_name, size);
     }
 }
 Node* parse_assign(char *id_name) {
     expect(ASSIGN);
-    Node* expr = parse_expression();
-    Node* assign = N_assign(N_id(id_name), expr);
-    free(id_name);
-    return assign;
+    if (current_token == LBRACKET) {
+        accept(LBRACKET);
+        Node *array_node = parse_expression();
+        List* elements = L_new();
+        L_push(elements, array_node);
+        while (accept(COMMA)) {
+            array_node = parse_expression();
+            L_push(elements, array_node);
+        }
+        expect(RBRACKET);
+        return N_assign(N_id(id_name), N_arr_vals(elements));
+    } else {
+        Node* expr = parse_expression();
+        Node* assign = N_assign(N_id(id_name), expr);
+        return assign;
+    }
 }
 Node* parse_expression() {
     return parse_or_exp();
@@ -288,21 +333,20 @@ Node* parse_mul_exp() {
 }
 Node* parse_term_exp() {
     if (current_token == INTVAL) {
-        long value = yylval.ival;
-        next();
+        long value = consume_integer_value();
         return N_int(value);
     } else if (current_token == DOUBLEVAL) {
-        double value = yylval.dval;
-        next();
+        double value = consume_double_value();
         return N_float(value);
     } else if (current_token == TRUE || current_token == FALSE) {
-        bool value = yylval.bval;
-        next();
+        bool value = consume_boolean_value();
         return N_bool(value);
     } else if (current_token == ID) {
-        char* id_name = yylval.id;
-        next();
+        char* id_name = consume_identifier();
         return N_id(id_name);
+    } else if (current_token == CARACTER) {
+        char cvalue = consume_char_value();
+        return N_char(cvalue);
     } else {
         expect(LPAREN);
         Node* expr = parse_expression();
