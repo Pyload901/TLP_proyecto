@@ -16,3 +16,6 @@ start
   exec hola(x,y);
   return 0;
 end
+int proc suma(int a, int b) start
+  return a + b;
+end

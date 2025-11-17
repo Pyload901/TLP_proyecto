@@ -69,6 +69,11 @@ Node *N_block(List *stmts) {
     node->list = stmts;
     return node;
 }
+Node *N_program(List *stmts) {
+    Node *node = allocate_node("PROGRAM");
+    node->list = stmts;
+    return node;
+}
 Node* N_for(Node *init, Node *cond, Node *update, Node *body) {
     Node *node = allocate_node("FOR");
     node->left = init;
@@ -101,6 +106,16 @@ Node *N_exec_fun(char *func_name, List *args) {
 Node *N_return(Node *expr) {
     Node *node = allocate_node("RETURN");
     node->left = expr;
+    return node;
+}
+Node *N_decla_fun(char *func_name, List *params, char *return_type, Node *body) {
+    Node *node = allocate_node("FUNCTION");
+    node->value = strdup(func_name);
+    node->list = params;
+    Node* ret_type_node = allocate_node("RETURN_TYPE");
+    ret_type_node->value = strdup(return_type);
+    node->left = ret_type_node;
+    node->right = body;
     return node;
 }
 List *L_new(void) {

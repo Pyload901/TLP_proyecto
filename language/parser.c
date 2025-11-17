@@ -30,8 +30,9 @@ Node* parse_for();
 Node* parse_while();
 Node* parse_if();
 Node* parse_exec_fun();
-Node *parse_return();
 List* parse_args();
+Node* parse_return();
+Node* parse_decla_fun();
 
 bool startsNonTerminal() {
     return current_token == TIPO || current_token == INTVAL || current_token == DOUBLEVAL ||
@@ -60,9 +61,13 @@ static char* consume_type_name(void) {
 Node* parse_program() {
     List* blocks = L_new();
     while (current_token != 0 && current_token != T_EOF) {
-        L_push(blocks, parse_block());
+        if (current_token == TIPO) {
+            L_push(blocks, parse_decla_fun());
+        } else if (current_token == START) {
+            L_push(blocks, parse_block());
+        }
     }
-    return N_block(blocks);
+    return N_program(blocks);
 }
 Node* parse_block() {
     expect(START);
@@ -173,6 +178,32 @@ Node* parse_return() {
     expect(RETURN);
     Node* expr = parse_expression();
     return N_return(expr);
+}
+List* parse_decla_fun_args() {
+    List* params = L_new();
+    char* param_type = consume_type_name();
+    char* param_name = consume_identifier();
+    Node* param_node = N_decla(param_type, param_name, NULL);
+    L_push(params, param_node);
+    while (accept(COMMA)) {
+        param_type = consume_type_name();
+        param_name = consume_identifier();
+        param_node = N_decla(param_type, param_name, NULL);
+        L_push(params, param_node);
+    }
+    return params;
+}
+Node* parse_decla_fun() {
+    char* return_type = consume_type_name();
+    printf("next token in decla_fun: %d\n", current_token);
+    expect(FUNCTION);
+    char *func_name = consume_identifier();
+    expect(LPAREN);
+    List* params = parse_decla_fun_args();
+    expect(RPAREN);
+    Node* body = parse_block();
+    Node* decla_fun_node = N_decla_fun(func_name, params, return_type, body);
+    return decla_fun_node;
 }
 
 Node* parse_decla(char *typename) {

@@ -1,5 +1,5 @@
 Programa -> Bloque Programa | Declaracion_funcion Programa | λ
-Declaracion_funcion -> FUNCTION TIPO ID LPAREN Parametros_funcion RPAREN Bloque
+Declaracion_funcion -> TIPO FUNCTION ID LPAREN Parametros_funcion RPAREN Bloque
 Parametros_funcion -> TIPO ID Parametros_funcion_aux | λ
 Parametros_funcion_aux -> COMMA TIPO ID Parametros_funcion_aux | λ
 Retorno_funcion -> RETURN Expresion
@@ -16,7 +16,7 @@ DeclaracionAux -> ASSIGN DeclaracionAssignAux
                     | λ
 DeclaracionAssignAux -> Expresion
                     | LBRACKET Lista_valores RBRACKET
-                    
+
 Lista_valores -> Expresion Lista_valores_aux | λ
 Lista_valores_aux -> COMMA Expresion Lista_valores_aux | λ
 For -> FOR LPAREN Declaracion SEMICOLON Expresion SEMICOLON Asignacion RPAREN Bloque
