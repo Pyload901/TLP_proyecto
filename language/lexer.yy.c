@@ -838,22 +838,22 @@ YY_RULE_SETUP
 case 9:
 YY_RULE_SETUP
 #line 20 "lexer.l"
-{ yylval.type = "bool"; return TIPO; }
+{ yylval.type = "BOOL"; return TIPO; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 21 "lexer.l"
-{ yylval.type = "char"; return TIPO; }
+{ yylval.type = "CHAR"; return TIPO; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 22 "lexer.l"
-{ yylval.type = "int"; return TIPO; }
+{ yylval.type = "INT"; return TIPO; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 23 "lexer.l"
-{ yylval.type = "float"; return TIPO; }
+{ yylval.type = "DOUBLE"; return TIPO; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP

@@ -2,18 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "tokens.h"
-#include "ast.h"
+#include "parser.h"
 
 yystype yylval;
-extern FILE *yyin; 
 
-static int current_token;
-static void next() {current_token = yylex();};
-static void die(int token) {printf("Syntax error at token %d\n", token); exit(1);}
-static bool accept(int token) {if (current_token == token) {next(); return true;} return false;}
-static void expect(int token) {if (!accept(token)) die(token);}
-
-Node* parse_program();
 Node* parse_block();
 Node* parse_instruction();
 Node* parse_assign(char *id_name);
@@ -361,15 +353,3 @@ Node* parse_term_exp() {
     }
 }
 
-int main () {
-    yyin = fopen("test.src", "r");
-    if (!yyin) {
-        perror("Failed to open input file");
-        return 1;
-    }
-    next();
-    Node* ast = parse_program();
-    ast_print(ast, 0);
-    fclose(yyin);
-    return 0;
-}

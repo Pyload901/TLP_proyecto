@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include "symtab.h"
 #include "ast.h"
-
-void analyze_program(Node *root);
+#include "semantic.h"
 void analyze_symbols(Node *node);
 void register_functions(Node *node);
+void analyze_node(Node *node);
 
-static Type parse_type(const char *type_str) {
+Type parse_type(const char *type_str) {
     Type type;
     if (strcmp(type_str, "INT") == 0) {
         type.base = INT;

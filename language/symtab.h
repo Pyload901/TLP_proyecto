@@ -47,7 +47,7 @@ typedef struct Symbol {
 } Symbol;
 
 typedef struct SymTab {
-    Symbol **symbols;
+    Symbol *symbols;
     int size;
     struct SymTab *parent;
 } SymTab;
@@ -59,8 +59,7 @@ SymTab* sym_create();
 void enter_scope();
 void exit_scope();
 
-Symbol* symtab_insert(const char *name, Type type, SymbolType
-    symbol_type);
+Symbol* sym_insert(const char *name, SymbolType symbol_type, Type type);
 Symbol *sym_insert_function(const char *name, Type return_type,
     int param_count,
     Type *param_types);
