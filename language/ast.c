@@ -30,22 +30,22 @@ Node *N_id_array(char *name, long index) {
     return node;
 }
 Node *N_char(char c) {
-    Node *node = allocate_node("CARACTER");
+    Node *node = allocate_node("CHAR");
     node->cvalue = c;
     return node;
 }
 Node *N_int(long value) {
-    Node *node = allocate_node("INTVAL");
+    Node *node = allocate_node("INT");
     node->ivalue = value;
     return node;
 }
 Node *N_float(double value) {
-    Node *node = allocate_node("DOUBLEVAL");
+    Node *node = allocate_node("DOUBLE");
     node->fvalue = value;
     return node;
 }
 Node *N_bool(bool value) {
-    Node *node = allocate_node("BOOLEAN");
+    Node *node = allocate_node("BOOL");
     node->bvalue = value;
     return node;
 }
