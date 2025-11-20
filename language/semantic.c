@@ -4,7 +4,22 @@
 #include "symtab.h"
 #include "ast.h"
 #include "semantic.h"
+static char* builtin_functions[] = {
+    "pinMode",
+    "digitalWrite",
+    "abs",
+    "sqrt",
+    "pow",
+};
+static char* builtin_constants[] = {
+    "INPUT",
+    "OUTPUT",
+    "HIGH",
+    "LOW",
+};
 void analyze_symbols(Node *node);
+void register_builtin_functions(void);
+void register_builtin_constants(void);
 void register_functions(Node *node);
 
 Type parse_type(const char *type_str) {
@@ -25,9 +40,25 @@ Type parse_type(const char *type_str) {
 
 void analyze_program(Node *root) {
     symtab_init();
+    register_builtin_constants();
+    register_builtin_functions();
     register_functions(root);
     analyze_symbols(root);
 }
+
+void register_builtin_functions(void) {
+    for (size_t i = 0; i < sizeof(builtin_functions) / sizeof(builtin_functions[0]); i++) {
+        char *func_name = builtin_functions[i];
+        sym_insert(func_name, SYMBOL_FUNCTION, make_type(INT))->is_builtin = true;
+    }
+}
+void register_builtin_constants(void) {
+    for (size_t i = 0; i < sizeof(builtin_constants) / sizeof(builtin_constants[0]); i++) {
+        char *const_name = builtin_constants[i];
+        sym_insert(const_name, SYMBOL_VARIABLE, make_type(INT))->is_builtin = true;
+    }
+}
+
 void register_functions(Node* node) {
     if (!node) return;
     for (int i = 0; i < node->list->size; i++) {
