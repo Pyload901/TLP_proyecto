@@ -4,6 +4,12 @@
 #include "tokens.h"
 #include "parser.h"
 
+static int current_token;
+static void next() {current_token = yylex();};
+static void die(int token) {printf("Syntax error at token %d\n", token); exit(1);}
+static bool accept(int token) {if (current_token == token) {next(); return true;} return false;}
+static void expect(int token) {if (!accept(token)) die(token);}
+
 yystype yylval;
 
 Node* parse_block();
@@ -82,6 +88,7 @@ static char consume_char_value(void) {
     return value;
 }
 Node* parse_program() {
+    next();
     List* blocks = L_new();
     while (current_token != 0 && current_token != T_EOF) {
         if (current_token == TIPO) {
