@@ -12,7 +12,6 @@ int main () {
         perror("Failed to open input file");
         return 1;
     }
-    next();
     Node* ast = parse_program();
     ast_print(ast, 0);
     analyze_program(ast);

@@ -44,6 +44,8 @@ typedef struct Symbol {
 
     int param_count;
     Type *param_type;
+
+    bool is_builtin;
 } Symbol;
 
 typedef struct SymTab {

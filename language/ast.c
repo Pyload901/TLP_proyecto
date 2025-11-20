@@ -26,7 +26,7 @@ Node *N_id(char *name) {
 Node *N_id_array(char *name, long index) {
     Node *node = allocate_node("ID_ARRAY");
     node->value = strdup(name);
-    node->ivalue = index;
+    node->left = N_int(index);
     return node;
 }
 Node *N_char(char c) {
@@ -166,6 +166,7 @@ static void printVal(Node *n){
   else if (strcmp(n->node_type,"DOUBLEVAL")==0) printf("=%f", n->fvalue);
   else if (strcmp(n->node_type,"BOOLEAN")==0) printf("=%s", n->bvalue ? "true" : "false");
   else if (strcmp(n->node_type,"ID")==0) printf("=%s", n->value);
+  else if (strcmp(n->node_type,"ID_ARRAY")==0) printf("=%s", n->value);
   else if (strcmp(n->node_type,"DECLARACION")==0) {
     printf("=%s", n->value);
     if (n->right) {
