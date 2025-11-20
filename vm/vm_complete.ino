@@ -8,26 +8,46 @@
 #define NUM_REGISTERS 8     // R0-R7
 
 // --- Opcodes ---
+// Reworked to match the provided opcode table (special opcodes removed)
 enum Opcode {
-    HALT = 0x00,
-    LOAD = 0x01,  // LOAD R, Val      : R = Val
-    ADD  = 0x02,  // ADD R1, R2       : R1 = R1 + R2
-    SUB  = 0x03,  // SUB R1, R2       : R1 = R1 - R2
-    MUL  = 0x04,  // MUL R1, R2       : R1 = R1 * R2
-    DIV  = 0x05,  // DIV R1, R2       : R1 = R1 / R2
-    MOV  = 0x06,  // MOV R1, R2       : R1 = R2
-    PRINT= 0x07,  // PRINT R          : Serial.println(R)
-    JMP  = 0x08,  // JMP Addr         : PC = Addr
-    JZ   = 0x09,  // JZ R, Addr       : If R == 0, PC = Addr
-    JNZ  = 0x0A,  // JNZ R, Addr      : If R != 0, PC = Addr
-    PUSH = 0x0B,  // PUSH R           : Stack.push(R)
-    POP  = 0x0C,  // POP R            : R = Stack.pop()
-    STORE= 0x0D,  // STORE R, Addr    : Heap[Addr] = R
-    LOADM= 0x0E,  // LOADM R, Addr    : R = Heap[Addr]
-    EQ   = 0x0F,  // EQ R1, R2        : R1 = (R1 == R2)
-    LT   = 0x10,  // LT R1, R2        : R1 = (R1 < R2)
-    GT   = 0x11,  // GT R1, R2        : R1 = (R1 > R2)
-    DEBUG= 0xFF   // DEBUG            : Dump registers
+    // Arithmetic & Logic (0x00 - 0x0C)
+    NOP   = 0x00,
+    ADD   = 0x01, // R0 = ARG1 + ARG2  (stores result in R0)
+    SUB   = 0x02,
+    MUL   = 0x03,
+    DIV   = 0x04, // div by zero -> R0 = 0
+    MOD   = 0x05,
+    AND   = 0x06,
+    OR    = 0x07,
+    XOR   = 0x08,
+    NOT   = 0x09, // unary: R0 = ~ARG1
+    CMP   = 0x0A, // sets flags
+    SHL   = 0x0B, // shift left (ARG2 immediate)
+    SHR   = 0x0C, // shift right (ARG2 immediate)
+
+    // Memory Access (0x10 - 0x17)
+    LOAD   = 0x10, // LOAD R,R   -> R[ARG1] = R[ARG2]
+    LOADI  = 0x11, // LOADI R,I  -> R[ARG1] = ARG2 (8-bit immediate)
+    LOADI16= 0x12, // LOADI16 R,I -> R[ARG1] = NEXT_WORD (16-bit immediate)
+    STORE  = 0x13, // STORE R,R  -> M[R[ARG1]] = R[ARG2]
+    LOAD_ADDR = 0x14, // LOAD_ADDR R,I -> R[ARG1] = heap_base + ARG2
+    PUSH   = 0x15,
+    POP    = 0x16,
+    PEEK   = 0x17, // PEEK R,I -> R[ARG1] = STACK[SP+ARG2]
+
+    // Control Flow (0x20 - 0x29)
+    JMP   = 0x20, // PC = ARG1 | (ARG2 << 8)
+    JZ    = 0x21,
+    JNZ   = 0x22,
+    JLT   = 0x23,
+    JGT   = 0x24,
+    JLE   = 0x25,
+    JGE   = 0x26,
+    CALL  = 0x27,
+    RET   = 0x28,
+    HALT  = 0x29
+
+    // Special opcodes (0x30 - 0x35) intentionally removed
 };
 
 // --- Instruction Format ---
@@ -38,19 +58,33 @@ struct Instruction {
     uint8_t arg2;
 };
 
+// Flags set by CMP
+struct Flags {
+    bool zero = false;
+    bool lt = false;
+    bool gt = false;
+    bool le = false;
+    bool ge = false;
+};
+
 // --- VM Class ---
 class TinyVM {
 public:
     int32_t registers[NUM_REGISTERS];
     int32_t stack[VM_STACK_SIZE];
     uint8_t heap[VM_HEAP_SIZE];
-    
-    uint16_t sp; // Stack Pointer
-    uint16_t pc; // Program Counter
+
+    uint16_t sp; // Stack pointer (next free index)
+    uint16_t pc; // Program Counter (byte index)
     bool running;
 
     const uint8_t* program;
     size_t programSize;
+
+    Flags flags;
+
+    // simple bump allocator base (kept for LOAD_ADDR/STORE use)
+    size_t heap_top;
 
     TinyVM() {
         reset();
@@ -65,6 +99,8 @@ public:
         running = false;
         program = nullptr;
         programSize = 0;
+        flags = Flags();
+        heap_top = 0;
     }
 
     void loadProgram(const uint8_t* code, size_t size) {
@@ -81,7 +117,7 @@ public:
             return;
         }
 
-        // Fetch
+        // Fetch basic 3-byte instruction (some ops will consume extra bytes)
         if (pc + 3 > programSize) {
             Serial.println("Error: Unexpected end of program");
             running = false;
@@ -93,76 +129,141 @@ public:
         uint8_t arg2 = program[pc + 2];
         pc += 3;
 
-        // Execute
+        int32_t tmp;
         switch (op) {
-            case HALT:
-                Serial.println("HALT encountered.");
-                running = false;
-                break;
-            
-            case LOAD: // LOAD R, Val (Val is small 8-bit immediate here for simplicity, or we can combine args)
-                // For this simple VM, let's assume ARG2 is an immediate value 0-255
-                if (arg1 < NUM_REGISTERS) {
-                    registers[arg1] = arg2;
-                }
+            // --- Arithmetic & Logic ---
+            case NOP:
                 break;
 
             case ADD:
+                // R0 = ARG1 + ARG2 (ARGs are register indices)
                 if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] += registers[arg2];
+                    registers[0] = registers[arg1] + registers[arg2];
                 }
                 break;
 
             case SUB:
                 if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] -= registers[arg2];
+                    registers[0] = registers[arg1] - registers[arg2];
                 }
                 break;
-            
+
             case MUL:
                 if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] *= registers[arg2];
+                    registers[0] = registers[arg1] * registers[arg2];
                 }
                 break;
 
             case DIV:
                 if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
                     if (registers[arg2] != 0)
-                        registers[arg1] /= registers[arg2];
+                        registers[0] = registers[arg1] / registers[arg2];
                     else
-                        Serial.println("Error: Division by Zero");
+                        registers[0] = 0; // div by zero rule
                 }
                 break;
 
-            case MOV:
+            case MOD:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    if (registers[arg2] != 0)
+                        registers[0] = registers[arg1] % registers[arg2];
+                    else
+                        registers[0] = 0;
+                }
+                break;
+
+            case AND:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] & registers[arg2];
+                }
+                break;
+
+            case OR:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] | registers[arg2];
+                }
+                break;
+
+            case XOR:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] ^ registers[arg2];
+                }
+                break;
+
+            case NOT:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = ~registers[arg1];
+                }
+                break;
+
+            case CMP:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int32_t a = registers[arg1];
+                    int32_t b = registers[arg2];
+                    flags.zero = (a == b);
+                    flags.lt   = (a < b);
+                    flags.gt   = (a > b);
+                    flags.le   = (a <= b);
+                    flags.ge   = (a >= b);
+                }
+                break;
+
+            case SHL:
+                // ARG2 treated as immediate (shift amount)
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] << (arg2 & 31);
+                }
+                break;
+
+            case SHR:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] >> (arg2 & 31);
+                }
+                break;
+
+            // --- Memory Access ---
+            case LOAD:
+                // LOAD R,R -> R[ARG1] = R[ARG2]
                 if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
                     registers[arg1] = registers[arg2];
                 }
                 break;
 
-            case PRINT:
+            case LOADI:
+                // LOADI R,I -> R[ARG1] = ARG2 (8-bit immediate)
                 if (arg1 < NUM_REGISTERS) {
-                    Serial.print("OUT: ");
-                    Serial.println(registers[arg1]);
+                    registers[arg1] = (int32_t)arg2;
                 }
                 break;
 
-            case JMP:
-                // JMP Addr (16-bit address from arg1 and arg2)
-                pc = (arg1 << 8) | arg2;
-                break;
-
-            case JZ:
-                // JZ R, Addr (8-bit address in arg2)
-                if (arg1 < NUM_REGISTERS && registers[arg1] == 0) {
-                    pc = arg2;
+            case LOADI16:
+                // LOADI16 R, NEXT_WORD (consume next two bytes little-endian)
+                if (arg1 < NUM_REGISTERS) {
+                    if (pc + 2 <= programSize) {
+                        uint16_t word = program[pc] | (program[pc+1] << 8);
+                        pc += 2;
+                        registers[arg1] = (int32_t)word;
+                    } else {
+                        Serial.println("Error: LOADI16 requires 2 more bytes");
+                        running = false;
+                    }
                 }
                 break;
 
-            case JNZ:
-                // JNZ R, Addr (8-bit address in arg2)
-                if (arg1 < NUM_REGISTERS && registers[arg1] != 0) {
-                    pc = arg2;
+            case STORE:
+                // STORE R,R -> M[R[ARG1]] = R[ARG2]
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int idx = registers[arg1];
+                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
+                        heap[idx] = (uint8_t)registers[arg2];
+                    }
+                }
+                break;
+
+            case LOAD_ADDR:
+                // LOAD_ADDR R,I -> R[ARG1] = heap_base + ARG2
+                if (arg1 < NUM_REGISTERS) {
+                    registers[arg1] = (int32_t)(heap_top + arg2);
                 }
                 break;
 
@@ -188,44 +289,92 @@ public:
                 }
                 break;
 
-            case STORE:
-                // STORE R, Addr (Addr is arg2, 8-bit immediate)
+            case PEEK:
+                // PEEK R,I -> R[ARG1] = STACK[SP+ARG2]
                 if (arg1 < NUM_REGISTERS) {
-                    if (arg2 < VM_HEAP_SIZE) {
-                        heap[arg2] = (uint8_t)registers[arg1];
+                    uint16_t idx = sp + arg2;
+                    if (idx < VM_STACK_SIZE) {
+                        registers[arg1] = stack[idx];
+                    } else {
+                        Serial.println("Error: PEEK out of bounds");
+                        running = false;
                     }
                 }
                 break;
 
-            case LOADM:
-                // LOADM R, Addr (Addr is arg2, 8-bit immediate)
-                if (arg1 < NUM_REGISTERS) {
-                    if (arg2 < VM_HEAP_SIZE) {
-                        registers[arg1] = heap[arg2];
-                    }
+            // --- Control Flow ---
+            case JMP:
+                // PC = ARG1 | (ARG2 << 8)
+                pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                break;
+
+            case JZ:
+                if (flags.zero) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
                 }
                 break;
 
-            case EQ:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] = (registers[arg1] == registers[arg2]) ? 1 : 0;
+            case JNZ:
+                if (!flags.zero) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
                 }
                 break;
 
-            case LT:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] = (registers[arg1] < registers[arg2]) ? 1 : 0;
+            case JLT:
+                if (flags.lt) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
                 }
                 break;
 
-            case GT:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] = (registers[arg1] > registers[arg2]) ? 1 : 0;
+            case JGT:
+                if (flags.gt) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
                 }
                 break;
 
-            case DEBUG:
-                dumpRegisters();
+            case JLE:
+                if (flags.le) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+
+            case JGE:
+                if (flags.ge) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+
+            case CALL:
+                // push return address (pc) as 16-bit (we'll store two stack slots: low then high)
+                if (sp + 2 < VM_STACK_SIZE) {
+                    uint16_t ret = pc;
+                    // store low/high as two stack slots for simplicity
+                    stack[sp++] = ret & 0xFFFF;
+                    stack[sp++] = (ret >> 16); // will be zero for our sizes, but keep slot usage consistent
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                } else {
+                    Serial.println("Error: Stack overflow on CALL");
+                    running = false;
+                }
+                break;
+
+            case RET:
+                // pop return address
+                if (sp >= 2) {
+                    sp -= 2;
+                    uint32_t low = (uint32_t)stack[sp];
+                    uint32_t high = (uint32_t)stack[sp+1];
+                    uint32_t ret = (high << 16) | (low & 0xFFFF);
+                    pc = (uint16_t)ret;
+                } else {
+                    Serial.println("Error: RET with empty stack");
+                    running = false;
+                }
+                break;
+
+            case HALT:
+                running = false;
+                Serial.println("HALT encountered.");
                 break;
 
             default:
@@ -253,13 +402,12 @@ public:
 };
 
 // --- Example Program ---
-// Calculates 5 + 10 and prints the result
+// Removed PRINT and other special ops from example
 const uint8_t exampleProgram[] = {
-    LOAD, 0, 5,    // R0 = 5
-    LOAD, 1, 10,   // R1 = 10
-    ADD,  0, 1,    // R0 = R0 + R1
-    PRINT, 0, 0,   // Print R0
-    HALT, 0, 0     // Stop
+    LOADI, 0, 5,    // R0 = 5
+    LOADI, 1, 10,   // R1 = 10
+    ADD,   0, 1,    // R0 = R0 + R1 -> result will be in R0 per spec (ADD stores in R0)
+    HALT, 0, 0      // Stop
 };
 
 TinyVM vm;
