@@ -45,9 +45,11 @@ enum Opcode {
     JGE   = 0x26,
     CALL  = 0x27,
     RET   = 0x28,
-    HALT  = 0x29
+    HALT  = 0x29,
 
-    // Special opcodes (0x30 - 0x35) intentionally removed
+    // Special (keep PRINT, add TRAP for builtins)
+    PRINT = 0x30, // PRINT R -> Serial / mock print
+    TRAP  = 0x31  // TRAP id -> call builtin (args in registers, result in R0)
 };
 
 // --- Instruction Format ---
@@ -65,6 +67,46 @@ struct Flags {
     bool gt = false;
     bool le = false;
     bool ge = false;
+};
+
+// =========================
+// === BUILTIN / PIN MAP ===
+// =========================
+
+// Optional logical->physical pin map. Compiler (option 1) may emit physical pins directly
+// or logical indices; VM will resolve logical indices via this table.
+// If you prefer purely physical pins, set LOGICAL_PIN_COUNT to 0.
+static const int LOGICAL_PIN_COUNT = 12;
+//TODO - check if these pin numbers are suitable our board
+static const int pin_map[LOGICAL_PIN_COUNT] = {
+    /* 0.. */ 2,
+    /* 1.. */ 4,
+    /* 2.. */ 5,
+    /* 3.. */ 18,
+    /* 4.. */ 19,
+    /* 5.. */ 21,
+    /* 6.. */ 32,
+    /* 7.. */ 33,
+    /* 8.. */ 34,
+    /* 9.. */ 35,
+    /*10.. */ 25,
+    /*11.. */ 26
+};
+
+static inline int resolve_pin(int logical_or_physical) {
+    if (LOGICAL_PIN_COUNT > 0 && logical_or_physical >= 0 && logical_or_physical < LOGICAL_PIN_COUNT) {
+        return pin_map[logical_or_physical];
+    }
+    return logical_or_physical; // treat as physical pin
+}
+
+// Builtin TRAP IDs (used with TRAP opcode; TRAP arg1 == id)
+enum BuiltinID_IO {
+    B_DIGITAL_READ  = 40,
+    B_DIGITAL_WRITE = 41,
+    B_ANALOG_READ   = 42,
+    B_PWM_WRITE     = 44,
+    B_PIN_MODE      = 45  // <- nuevo
 };
 
 // --- VM Class ---
@@ -109,6 +151,45 @@ public:
         pc = 0;
         running = true;
         Serial.println("Program Loaded.");
+    }
+
+    // call builtin TRAP handler (args are in registers, return in R0 if any)
+    void call_trap(uint8_t id) {
+        switch (id) {
+            case B_DIGITAL_READ: {
+                int pin = resolve_pin((int)registers[0]);
+                int v = digitalRead(pin);
+                registers[0] = v;
+                break;
+            }
+            case B_DIGITAL_WRITE: {
+                int pin = resolve_pin((int)registers[0]);
+                int val = (int)registers[1];
+                digitalWrite(pin, val ? HIGH : LOW);
+                break;
+            }
+            case B_ANALOG_READ: {
+                int pin = resolve_pin((int)registers[0]);
+                int v = analogRead(pin);
+                registers[0] = v;
+                break;
+            }
+            case B_PWM_WRITE: {
+                int pin = resolve_pin((int)registers[0]);
+                int pwm = (int)registers[1];
+                pwm_write_pin(pin, pwm);
+                break;
+            }
+            case B_PIN_MODE: {
+                int pin = resolve_pin((int)registers[0]);
+                int mode = (int)registers[1]; // 0=input, 1=output (definir convención)
+                pinMode(pin, mode ? OUTPUT : INPUT);
+                break;
+            }
+            default:
+                Serial.print("Unknown TRAP id: "); Serial.println(id);
+                break;
+        }
     }
 
     void step() {
@@ -375,6 +456,18 @@ public:
             case HALT:
                 running = false;
                 Serial.println("HALT encountered.");
+                break;
+
+            // PRINT (special kept): print numeric register value
+            case PRINT:
+                if (arg1 < NUM_REGISTERS) {
+                    Serial.println(registers[arg1]);
+                }
+                break;
+
+            // TRAP: call builtin handler; arg1 = builtin id
+            case TRAP:
+                call_trap(arg1);
                 break;
 
             default:

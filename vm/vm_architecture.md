@@ -1,4 +1,4 @@
-# Minimal VM Architecture for ESP32 - Formal Specification
+# VM Architecture
 
 ## 1. OVERVIEW
 
@@ -137,7 +137,7 @@ Total: 1 byte opcode + 2 bytes arguments = 3 bytes per instruction
 | 0x31   | READ     | R    | R[ARG1] = Input()                 | Console input      |
 | 0x32   | ALLOC    | I    | Allocate ARG1 bytes on heap       | Returns base in R6 |
 | 0x33   | FREE     | -    | Free last allocation              | LIFO dealloc       |
-| 0x34   | TRAP     | I    | System trap (I/O, debug)          | Extended ops       |
+| 0x34   | TRAP     | I    | System trap (I/O, debug)          | Invoke builtin/extended ops (args in registers; id=ARG1) |
 | 0x35   | DEBUG    | R,I  | Debug output R[ARG1] with ID ARG2 | Dev only           |
 
 ---
