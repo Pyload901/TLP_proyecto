@@ -47,7 +47,7 @@ void register_functions(Node* node) {
 void analyze_symbols(Node *node) {
     if (!node) return;
 
-    if (strcmp(node->node_type, "DECLA") == 0) {
+    if (strcmp(node->node_type, "DECLARACION") == 0) {
         char *var_name = node->value;
         Type var_type = parse_type(node->left->value);
         if (sym_lookup_current(var_name)) {
@@ -55,7 +55,7 @@ void analyze_symbols(Node *node) {
             exit(1);
         }
         sym_insert(var_name, SYMBOL_VARIABLE, var_type);
-    } else if (strcmp(node->node_type, "DECLA_ARRAY") == 0) {
+    } else if (strcmp(node->node_type, "DECLARACION_ARRAY") == 0) {
         char *var_name = node->value;
         Type var_type = parse_type(node->left->value);
         var_type.is_array = true;
@@ -81,7 +81,8 @@ void analyze_symbols(Node *node) {
         exit_scope();
         return;
     } else if (strcmp(node->node_type, "ASSIGN") == 0) {
-        if (node->left && strcmp(node->left->node_type, "ID") == 0) {
+        if (node->left && (strcmp(node->left->node_type, "ID") == 0)
+        ) {
             char *var_name = node->left->value;
             Symbol *sym = sym_lookup(var_name);
             if (!sym) {
@@ -90,6 +91,18 @@ void analyze_symbols(Node *node) {
             }
             // check type compatibility here if needed
             
+        }
+        if (node->right && (strcmp(node->right->node_type, "ID_ARRAY") == 0)){
+            char *array_name = node->right->value;
+            Symbol *sym = sym_lookup(array_name);
+            if (!sym) {
+                fprintf(stderr, "Error: Array %s not declared.\n", array_name);
+                exit(1);
+            }
+            if (!sym->type.is_array) {
+                fprintf(stderr, "Error: %s is not an array.\n", array_name);
+                exit(1);
+            }
         }
     } else if (strcmp(node->node_type, "EXEC") == 0) {
         char *func_name = node->value;
