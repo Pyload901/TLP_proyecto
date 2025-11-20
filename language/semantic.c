@@ -6,7 +6,6 @@
 #include "semantic.h"
 void analyze_symbols(Node *node);
 void register_functions(Node *node);
-void analyze_node(Node *node);
 
 Type parse_type(const char *type_str) {
     Type type;
@@ -31,7 +30,7 @@ void analyze_program(Node *root) {
 }
 void register_functions(Node* node) {
     if (!node) return;
-    for (size_t i = 0; i < node->list->size; i++) {
+    for (int i = 0; i < node->list->size; i++) {
         if (strcmp(node->node_type, "FUNCTION") == 0) {
             Node *func_node = (Node *)node->list->items[i];
             char *func_name = func_node->value;
@@ -67,10 +66,8 @@ void analyze_symbols(Node *node) {
         }
         sym_insert(var_name, SYMBOL_VARIABLE, var_type);
     } else if (strcmp(node->node_type, "FUNCTION") == 0) {
-        char *func_name = node->value;
-        Type return_type = parse_type(node->left->value);
         enter_scope();
-        for (size_t i = 0; i < node->list->size; i++) {
+        for (int i = 0; i < node->list->size; i++) {
             Node *param_node = (Node *)node->list->items[i];
             char *param_name = param_node->value;
             Type param_type = parse_type(param_node->left->value);
@@ -80,7 +77,7 @@ void analyze_symbols(Node *node) {
             }
             sym_insert(param_name, SYMBOL_VARIABLE, param_type);
         }
-        analyze_node(node->right);
+        analyze_symbols(node->right);
         exit_scope();
         return;
     } else if (strcmp(node->node_type, "ASSIGN") == 0) {
@@ -104,13 +101,13 @@ void analyze_symbols(Node *node) {
         // check argument types here if needed
     }
 
-    analyze_node(node->left);
-    analyze_node(node->right);
-    analyze_node(node->extra);
+    analyze_symbols(node->left);
+    analyze_symbols(node->right);
+    analyze_symbols(node->extra);
 
     if (node->list) {
-        for (size_t i = 0; i < node->list->size; i++) {
-            analyze_node((Node *)node->list->items[i]);
+        for (int i = 0; i < node->list->size; i++) {
+            analyze_symbols((Node *)node->list->items[i]);
         }
     }
 }

@@ -5,6 +5,10 @@ LEX=flex
 all: parser
 parser: lexer.yy.c parser.o ast.o symtab.o semantic.o main.o
 	$(CC) $(CFLAGS) -o $@ lexer.yy.c parser.o ast.o symtab.o semantic.o main.o -lfl
+symtab.o: symtab.c symtab.h
+	$(CC) $(CFLAGS) -c -o $@ symtab.c
+semantic.o: semantic.c semantic.h symtab.h ast.h
+	$(CC) $(CFLAGS) -c -o $@ semantic.c
 lexer.yy.c: lexer.l tokens.h
 	$(LEX) -o $@ lexer.l
 
@@ -13,10 +17,6 @@ parser.o: parser.c tokens.h ast.h
 
 ast.o: ast.c ast.h
 	$(CC) $(CFLAGS) -c -o $@ ast.c
-symtab.o: symtab.c symtab.h
-	$(CC) $(CFLAGS) -c -o $@ symtab.c
-semantic.o: semantic.c semantic.h symtab.h ast.h
-	$(CC) $(CFLAGS) -c -o $@ semantic.c
 
 clean:
 	rm -f parser lexer.yy.c parser.o ast.o
