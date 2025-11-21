@@ -113,6 +113,7 @@ Total: 1 byte opcode + 2 bytes arguments = 3 bytes per instruction
 | 0x15   | PUSH      | R    | STACK[SP--] = R[ARG1]      | Push register    |
 | 0x16   | POP       | R    | R[ARG1] = STACK[++SP]      | Pop to register  |
 | 0x17   | PEEK      | R,I  | R[ARG1] = STACK[SP+ARG2]   | Read without pop |
+| 0x18   | LOADM     | R,R  | R[ARG1] = M[R[ARG2]]       | Array load       |
 
 ### Control Flow (10 opcodes)
 

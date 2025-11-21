@@ -34,6 +34,7 @@ enum Opcode {
     PUSH   = 0x15,
     POP    = 0x16,
     PEEK   = 0x17, // PEEK R,I -> R[ARG1] = STACK[SP+ARG2]
+    LOADM  = 0x18, // LOADM R,R -> R[ARG1] = M[R[ARG2]]
 
     // Control Flow (0x20 - 0x29)
     JMP   = 0x20, // PC = ARG1 | (ARG2 << 8)
@@ -378,6 +379,18 @@ public:
                         registers[arg1] = stack[idx];
                     } else {
                         Serial.println("Error: PEEK out of bounds");
+                        running = false;
+                    }
+                }
+                break;
+
+            case LOADM:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int idx = registers[arg2];
+                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
+                        registers[arg1] = heap[idx];
+                    } else {
+                        Serial.println("Error: LOADM out of bounds");
                         running = false;
                     }
                 }

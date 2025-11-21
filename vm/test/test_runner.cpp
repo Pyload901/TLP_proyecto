@@ -156,8 +156,8 @@ void test_call_ret() {
 
 void test_loadi16_and_store_loadaddr() {
     // LOADI16 into R0 with 16-bit value 0x1234, then LOAD_ADDR into R1 with offset 5 -> R1 = heap_top + 5
-    // Then STORE a byte from R0 into heap at index R1 (only low byte stored), then check heap via popping it back via LOAD_ADDR+STORE semantics:
-    // Because VM does not provide direct read-from-heap instruction, we'll store to heap and then use LOAD_ADDR to get base and then validate registers indirectly:
+    // Then STORE a byte from R0 into heap at index R1 (only low byte stored). LOADM now allows reading it back,
+    // but this test keeps the indirect validation to ensure legacy paths still behave correctly.
     uint8_t program[] = {
         LOADI16, 0, 0,      // LOADI16 consumes next 2 bytes (placed after)
         0x34, 0x12,         // little-endian 0x1234 => 4660
@@ -171,6 +171,19 @@ void test_loadi16_and_store_loadaddr() {
     assert(ok);
 }
 
+void test_store_and_loadm() {
+    uint8_t program[] = {
+        LOADI, 0, 77,  // value
+        LOADI, 1, 10,  // heap index
+        STORE, 1, 0,   // heap[10] = 77
+        LOADI, 2, 0,   // clear R2
+        LOADM, 2, 1,   // R2 = heap[10]
+        HALT, 0, 0
+    };
+    bool ok = run_and_check(program, sizeof(program), {{2,77}}, "test_store_and_loadm");
+    assert(ok);
+}
+
 int main() {
     std::cout << "Starting VM Tests..." << std::endl;
 
@@ -181,6 +194,7 @@ int main() {
     test_push_pop();
     test_call_ret();
     test_loadi16_and_store_loadaddr();
+    test_store_and_loadm();
 
     std::cout << "All tests passed!" << std::endl;
     return 0;
