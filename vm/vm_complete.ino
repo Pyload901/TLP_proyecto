@@ -121,7 +121,11 @@ enum BuiltinID_IO {
     B_TURN_LEFT     = 52, // registers[0]=ms
     B_TURN_RIGHT    = 53, // registers[0]=ms
     B_SET_SPEED     = 54, // registers[0]=speed(0-100)
-    B_STOP          = 55  // no args
+    B_STOP          = 55, // no args
+
+    // IR sensor builtins
+    B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
+    B_READ_IR_RIGHT = 61  // returns right sensor reading in R0
 };
 
 // --- VM Class ---
@@ -239,6 +243,19 @@ public:
 
             case B_STOP: {
                 stopMotors();
+                break;
+            }
+
+            // --- IR sensor builtins ---
+            case B_READ_IR_LEFT: {
+                lecturaSensorIzq = analogRead(sensorIzqPin);
+                registers[0] = lecturaSensorIzq;
+                break;
+            }
+
+            case B_READ_IR_RIGHT: {
+                lecturaSensorDer = analogRead(sensorDerPin);
+                registers[0] = lecturaSensorDer;
                 break;
             }
 
@@ -676,6 +693,11 @@ bool loadProgramFromSD() {
 
 TinyVM vm;
 
+// Forward declaration for sensor init so setup() can call it
+#ifndef UNIT_TESTING
+void initSensors();
+#endif
+
 #ifndef UNIT_TESTING
 void setup() {
     Serial.begin(115200);
@@ -794,5 +816,30 @@ void turnRight_ms(int ms) {
 
 void set_speed(int s) {
     speed_global = constrain(s, 0, 100);
+}
+#endif
+
+// --- IR Sensors configuration ---
+// Note: in your comment the left/right pins were swapped; follow given values
+const int sensorIzqPin = 34; // ADC1_CH6
+const int sensorDerPin = 35; // ADC1_CH7
+
+int lecturaSensorIzq = 0;
+int lecturaSensorDer = 0;
+int umbralIzq = 1500;
+int umbralDer = 1500;
+
+// Helper to initialize sensor pins and ADC channels
+#ifndef UNIT_TESTING
+void initSensors() {
+    // Set motor control pins as outputs already set elsewhere; set ADC pins as input
+    pinMode(sensorIzqPin, INPUT);
+    pinMode(sensorDerPin, INPUT);
+    
+    // Setup PWM channels for ESP32 if needed (using ledc)
+    ledcSetup(0, 2000, 8);
+    ledcSetup(1, 2000, 8);
+    ledcAttachPin(L_ENA, 0);
+    ledcAttachPin(R_ENB, 1);
 }
 #endif
