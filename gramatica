@@ -45,7 +45,7 @@ Expresion_multiplicacion -> Termino TerminoAux
 TerminoAux -> MULT Termino TerminoAux | DIV Termino TerminoAux | MODULO Termino TerminoAux | λ
 Termino -> MINUS Factor | Factor
 
-Factor -> ID ArrayIndexOpt | Valor | LPAREN Expresion RPAREN
+Factor -> ID ArrayIndexOpt | Valor | LPAREN Expresion RPAREN | Exec_funcion SEMICOLON
 ArrayIndexOpt -> LBRACKET Expresion RBRACKET | λ
 Op_relacional -> EQ | NEQ | LT | GT | LEQ | GEQ
 Valor -> INTVAL | DOUBLEVAL | CARACTER | Booleano

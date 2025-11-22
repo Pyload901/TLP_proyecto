@@ -352,6 +352,10 @@ Node* parse_term_exp() {
     } else if (current_token == CARACTER) {
         char cvalue = consume_char_value();
         return N_char(cvalue);
+    } else if (current_token == EXEC) {
+        accept(EXEC);
+        Node *exec_fun = parse_exec_fun();
+        return exec_fun;
     } else {
         expect(LPAREN);
         Node* expr = parse_expression();

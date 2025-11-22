@@ -338,6 +338,7 @@ static RegValue translate_expression(Translator *tr, Node *expr);
 static bool translate_statement(Translator *tr, Node *stmt);
 static bool translate_block(Translator *tr, Node *block);
 static bool translate_function(Translator *tr, Node *func);
+static RegValue translate_exec_expr(Translator *tr, Node *node);
 static bool translate_exec(Translator *tr, Node *node);
 static bool translate_if(Translator *tr, Node *node);
 static bool translate_while(Translator *tr, Node *node);
@@ -456,81 +457,58 @@ static size_t emit_jump_if_zero(Translator *tr, uint8_t reg) {
     return emit_instruction(&tr->code, OP_JZ, 0, 0);
 }
 
-static bool translate_exec(Translator *tr, Node *node) {
+static void cleanup_regvalues(Translator *tr, RegValue values[], size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        if (values[i].is_temp) {
+            release_temp(tr, values[i].reg);
+        }
+    }
+}
+
+static RegValue translate_exec_expr(Translator *tr, Node *node) {
+    RegValue error = make_error_reg();
     if (!node->value) {
         translator_fail(tr, "EXEC node missing target name");
-        return false;
+        return error;
     }
-    
-    /* Check if it's a builtin function */
+
     int builtin_id = get_builtin_trap_id(node->value);
-    
     if (builtin_id == -2) {
-        /* Special case: print */
-        size_t arg_count = node->list ? node->list->size : 0;
-        if (arg_count != 1) {
-            translator_fail(tr, "print requires exactly one argument");
-            return false;
-        }
-        RegValue arg = translate_expression(tr, node->list->items[0]);
-        if (tr->failed) return false;
-        
-        /* PRINT opcode takes register in arg1 */
-        emit_instruction(&tr->code, PRINT, arg.reg, 0);
-        
-        if (arg.is_temp) release_temp(tr, arg.reg);
-        return true;
+        translator_fail(tr, "print cannot be used inside expressions");
+        return error;
     }
-    
-    if (builtin_id >= 0) {
-        /* It's a builtin with TRAP ID */
-        size_t arg_count = node->list ? node->list->size : 0;
-        
-        /* Evaluate all arguments */
-        RegValue args[VM_NUM_REGISTERS];
-        for (size_t i = 0; i < arg_count; ++i) {
-            args[i] = translate_expression(tr, node->list->items[i]);
-            if (tr->failed) {
-                for (size_t j = 0; j < i; ++j) {
-                    if (args[j].is_temp) release_temp(tr, args[j].reg);
-                }
-                return false;
-            }
-        }
-        
-        /* Move arguments to registers R1, R2, ... for TRAP convention */
-        for (size_t i = 0; i < arg_count; ++i) {
-            emit_move(tr, (uint8_t)(i + 1), args[i].reg);
-            if (args[i].is_temp) release_temp(tr, args[i].reg);
-        }
-        
-        /* Emit TRAP instruction with builtin ID */
-        emit_instruction(&tr->code, TRAP, (uint8_t)builtin_id, 0);
-        
-        return true;
-    }
-    
-    /* Not a builtin, look for user-defined function */
-    FunctionInfo *info = find_function_info(tr, node->value);
-    if (!info) {
-        translator_fail(tr, "Call to unknown function");
-        return false;
-    }
+
     size_t arg_count = node->list ? node->list->size : 0;
-    if (arg_count != info->param_count) {
-        translator_fail(tr, "Argument count mismatch in function call");
-        return false;
-    }
     RegValue args[VM_NUM_REGISTERS];
     for (size_t i = 0; i < arg_count; ++i) {
         args[i] = translate_expression(tr, node->list->items[i]);
         if (tr->failed) {
-            for (size_t j = 0; j < i; ++j) {
-                if (args[j].is_temp) release_temp(tr, args[j].reg);
-            }
-            return false;
+            cleanup_regvalues(tr, args, i);
+            return error;
         }
     }
+
+    if (builtin_id >= 0) {
+        for (size_t i = 0; i < arg_count; ++i) {
+            emit_move(tr, (uint8_t)(i + 1), args[i].reg);
+            if (args[i].is_temp) release_temp(tr, args[i].reg);
+        }
+        emit_instruction(&tr->code, TRAP, (uint8_t) builtin_id, 0);
+        goto capture_result;
+    }
+
+    FunctionInfo *info = find_function_info(tr, node->value);
+    if (!info) {
+        cleanup_regvalues(tr, args, arg_count);
+        translator_fail(tr, "Call to unknown function");
+        return error;
+    }
+    if (arg_count != info->param_count) {
+        cleanup_regvalues(tr, args, arg_count);
+        translator_fail(tr, "Argument count mismatch in function call");
+        return error;
+    }
+
     for (int reg = 1; reg < VM_NUM_REGISTERS; ++reg) {
         emit_instruction(&tr->code, OP_PUSH, (uint8_t) reg, 0);
     }
@@ -543,6 +521,37 @@ static bool translate_exec(Translator *tr, Node *node) {
     for (int reg = VM_NUM_REGISTERS - 1; reg >= 1; --reg) {
         emit_instruction(&tr->code, OP_POP, (uint8_t) reg, 0);
     }
+
+capture_result:
+    uint8_t result_reg = alloc_temp(tr);
+    if (tr->failed) return error;
+    emit_move(tr, result_reg, 0);
+    RegValue result = { result_reg, true };
+    return result;
+}
+
+static bool translate_exec(Translator *tr, Node *node) {
+    if (!node->value) {
+        translator_fail(tr, "EXEC node missing target name");
+        return false;
+    }
+    int builtin_id = get_builtin_trap_id(node->value);
+    if (builtin_id == -2) {
+        size_t arg_count = node->list ? node->list->size : 0;
+        if (arg_count != 1) {
+            translator_fail(tr, "print requires exactly one argument");
+            return false;
+        }
+        RegValue arg = translate_expression(tr, node->list->items[0]);
+        if (tr->failed) return false;
+        emit_instruction(&tr->code, PRINT, arg.reg, 0);
+        if (arg.is_temp) release_temp(tr, arg.reg);
+        return true;
+    }
+
+    RegValue result = translate_exec_expr(tr, node);
+    if (tr->failed) return false;
+    if (result.is_temp) release_temp(tr, result.reg);
     return true;
 }
 
@@ -607,6 +616,9 @@ static RegValue translate_expression(Translator *tr, Node *expr) {
         if (addr.is_temp) release_temp(tr, addr.reg);
         RegValue r = {dst, true};
         return r;
+    }
+    if (strcmp(kind, "EXEC") == 0) {
+        return translate_exec_expr(tr, expr);
     }
     if (strcmp(kind, "ADD") == 0) {
         return translate_binary_arith(tr, expr, OP_ADD);

@@ -62,10 +62,12 @@ void register_builtin_constants(void) {
 
 void register_functions(Node* node) {
     if (!node) return;
+    Node **nodes = node->list->items;
     for (int i = 0; i < node->list->size; i++) {
-        if (strcmp(node->node_type, "FUNCTION") == 0) {
+        if (strcmp(nodes[i]->node_type, "FUNCTION") == 0) {
             Node *func_node = (Node *)node->list->items[i];
             char *func_name = func_node->value;
+            printf("Registering function: %s\n", func_name);
             Type return_type = parse_type(func_node->left->value);
             if (sym_lookup_current(func_name)) {
                 fprintf(stderr, "Error: Function %s already declared in this scope.\n", func_name);
@@ -74,7 +76,6 @@ void register_functions(Node* node) {
             sym_insert(func_name, SYMBOL_FUNCTION, return_type);
         }
     }
-
 }
 void analyze_symbols(Node *node) {
     if (!node) return;
