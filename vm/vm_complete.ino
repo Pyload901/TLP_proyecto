@@ -113,7 +113,15 @@ enum BuiltinID_IO {
     B_DIGITAL_WRITE = 41,
     B_ANALOG_READ   = 42,
     B_PWM_WRITE     = 44,
-    B_PIN_MODE      = 45  // <- nuevo
+    B_PIN_MODE      = 45,  // <- nuevo
+
+    // Motor / Movement builtins
+    B_FORWARD       = 50, // registers[0]=ms
+    B_BACK          = 51, // registers[0]=ms
+    B_TURN_LEFT     = 52, // registers[0]=ms
+    B_TURN_RIGHT    = 53, // registers[0]=ms
+    B_SET_SPEED     = 54, // registers[0]=speed(0-100)
+    B_STOP          = 55  // no args
 };
 
 // --- VM Class ---
@@ -169,30 +177,71 @@ public:
                 registers[0] = v;
                 break;
             }
+
             case B_DIGITAL_WRITE: {
                 int pin = resolve_pin((int)registers[0]);
                 int val = (int)registers[1];
                 digitalWrite(pin, val ? HIGH : LOW);
                 break;
             }
+
             case B_ANALOG_READ: {
                 int pin = resolve_pin((int)registers[0]);
                 int v = analogRead(pin);
                 registers[0] = v;
                 break;
             }
+
             case B_PWM_WRITE: {
                 int pin = resolve_pin((int)registers[0]);
                 int pwm = (int)registers[1];
                 pwm_write_pin(pin, pwm);
                 break;
             }
+
             case B_PIN_MODE: {
                 int pin = resolve_pin((int)registers[0]);
                 int mode = (int)registers[1]; // 0=input, 1=output (definir convención)
                 pinMode(pin, mode ? OUTPUT : INPUT);
                 break;
             }
+
+            // --- Movement builtins ---
+            case B_FORWARD: {
+                int ms = (int)registers[0];
+                forward_ms(ms);
+                break;
+            }
+
+            case B_BACK: {
+                int ms = (int)registers[0];
+                back_ms(ms);
+                break;
+            }
+
+            case B_TURN_LEFT: {
+                int ms = (int)registers[0];
+                turnLeft_ms(ms);
+                break;
+            }
+
+            case B_TURN_RIGHT: {
+                int ms = (int)registers[0];
+                turnRight_ms(ms);
+                break;
+            }
+
+            case B_SET_SPEED: {
+                int s = (int)registers[0];
+                set_speed(s);
+                break;
+            }
+
+            case B_STOP: {
+                stopMotors();
+                break;
+            }
+
             default:
                 Serial.print("Unknown TRAP id: "); Serial.println(id);
                 break;
