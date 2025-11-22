@@ -35,8 +35,19 @@ typedef enum {
     OP_JGE      = 0x26,
     OP_CALL     = 0x27,
     OP_RET      = 0x28,
-    OP_HALT     = 0x29
+    OP_HALT     = 0x29,
+    PRINT       = 0x30,
+    TRAP        = 0x31
 } Opcode;
+
+/* Builtin trap IDs matching VM implementation */
+typedef enum {
+    B_DIGITAL_READ  = 40,
+    B_DIGITAL_WRITE = 41,
+    B_ANALOG_READ   = 42,
+    B_PWM_WRITE     = 44,
+    B_PIN_MODE      = 45
+} BuiltinTrapID;
 
 typedef struct {
     uint8_t *data;
@@ -80,6 +91,8 @@ static const char *opcode_name(Opcode op) {
         case OP_CALL:    return "CALL";
         case OP_RET:     return "RET";
         case OP_HALT:    return "HALT";
+        case PRINT:      return "PRINT";
+        case TRAP:       return "TRAP";
         default:         return "UNKNOWN";
     }
 }
@@ -251,6 +264,23 @@ static FunctionInfo *find_function_info(Translator *tr, const char *name) {
     return NULL;
 }
 
+/* Check if a function is a builtin and return its trap ID 
+ * Returns -1 if not a builtin, -2 if it's print (special case), 
+ * or the trap ID otherwise */
+static int get_builtin_trap_id(const char *name) {
+    if (strcmp(name, "print") == 0) {
+        return -2;  /* Special case: print has its own opcode */
+    }
+    if (strcmp(name, "pinMode") == 0) {
+        return B_PIN_MODE;
+    }
+    if (strcmp(name, "digitalWrite") == 0) {
+        return B_DIGITAL_WRITE;
+    }
+    /* Note: abs, sqrt, pow don't have VM implementations yet */
+    return -1;  /* Not a builtin */
+}
+
 static VarBinding *register_var(Translator *tr, const char *name) {
     if (tr->next_var_reg >= tr->temp_top) {
         translator_fail(tr, "Register limit reached (max 7 user registers)");
@@ -419,6 +449,56 @@ static bool translate_exec(Translator *tr, Node *node) {
         translator_fail(tr, "EXEC node missing target name");
         return false;
     }
+    
+    /* Check if it's a builtin function */
+    int builtin_id = get_builtin_trap_id(node->value);
+    
+    if (builtin_id == -2) {
+        /* Special case: print */
+        size_t arg_count = node->list ? node->list->size : 0;
+        if (arg_count != 1) {
+            translator_fail(tr, "print requires exactly one argument");
+            return false;
+        }
+        RegValue arg = translate_expression(tr, node->list->items[0]);
+        if (tr->failed) return false;
+        
+        /* PRINT opcode takes register in arg1 */
+        emit_instruction(&tr->code, PRINT, arg.reg, 0);
+        
+        if (arg.is_temp) release_temp(tr, arg.reg);
+        return true;
+    }
+    
+    if (builtin_id >= 0) {
+        /* It's a builtin with TRAP ID */
+        size_t arg_count = node->list ? node->list->size : 0;
+        
+        /* Evaluate all arguments */
+        RegValue args[VM_NUM_REGISTERS];
+        for (size_t i = 0; i < arg_count; ++i) {
+            args[i] = translate_expression(tr, node->list->items[i]);
+            if (tr->failed) {
+                for (size_t j = 0; j < i; ++j) {
+                    if (args[j].is_temp) release_temp(tr, args[j].reg);
+                }
+                return false;
+            }
+        }
+        
+        /* Move arguments to registers R1, R2, ... for TRAP convention */
+        for (size_t i = 0; i < arg_count; ++i) {
+            emit_move(tr, (uint8_t)(i + 1), args[i].reg);
+            if (args[i].is_temp) release_temp(tr, args[i].reg);
+        }
+        
+        /* Emit TRAP instruction with builtin ID */
+        emit_instruction(&tr->code, TRAP, (uint8_t)builtin_id, 0);
+        
+        return true;
+    }
+    
+    /* Not a builtin, look for user-defined function */
     FunctionInfo *info = find_function_info(tr, node->value);
     if (!info) {
         translator_fail(tr, "Call to unknown function");
@@ -969,7 +1049,7 @@ bool translate_program(Node *root, const char *output_path) {
                 Opcode op = (Opcode) tr.code.data[base];
                 uint8_t arg1 = tr.code.data[base + 1];
                 uint8_t arg2 = tr.code.data[base + 2];
-                fprintf(out, "%04zu %-7s %3u %3u\n", i, opcode_name(op), arg1, arg2);
+                fprintf(out, "%-7s %3u %3u\n", opcode_name(op), arg1, arg2);
             }
             fclose(out);
             fprintf(stderr, "translator: wrote %zu instructions to %s\n", count, output_path);
