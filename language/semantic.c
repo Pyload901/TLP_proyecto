@@ -10,6 +10,7 @@ static char* builtin_functions[] = {
     "abs",
     "sqrt",
     "pow",
+    "print"
 };
 static char* builtin_constants[] = {
     "INPUT",
