@@ -652,29 +652,23 @@ void setup() {
     // Inicializar SD card
     if (!initializeSD()) {
         Serial.println("ERROR CRÍTICO: No se puede inicializar SD");
-        Serial.println("Ejecutando programa de ejemplo...");
-        vm.loadProgram(exampleProgram, sizeof(exampleProgram));
-        vm.run();
-        vm.dumpRegisters();
+        Serial.println("Sistema detenido.");
         return;
     }
     
     // Cargar programa desde SD
     if (!loadProgramFromSD()) {
-        Serial.println("ERROR CRÍTICO: No se puede cargar el programa");
-        Serial.println("Ejecutando programa de ejemplo...");
-        vm.loadProgram(exampleProgram, sizeof(exampleProgram));
-        vm.run();
-        vm.dumpRegisters();
+        Serial.println("ERROR CRÍTICO: No se puede cargar el programa desde SD");
+        Serial.println("Sistema detenido.");
         return;
     }
     
-    Serial.println("--- INICIANDO EJECUCIÓN ---");
-    vm.loadProgram(programBuffer, programSize);
-    vm.run();
+    // Serial.println("--- INICIANDO EJECUCIÓN ---");
+    // vm.loadProgram(programBuffer, programSize);
+    // vm.run();
     
-    Serial.println("--- EJECUCIÓN COMPLETADA ---");
-    vm.dumpRegisters();
+    // Serial.println("--- EJECUCIÓN COMPLETADA ---");
+    // vm.dumpRegisters();
 }
 
 void loop() {
