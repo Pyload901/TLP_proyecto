@@ -673,4 +673,77 @@ void pwm_write_pin(int pin, int pwmValue) {
     // Para simplicidad, vamos a usar analogWrite que debería funcionar
     analogWrite(pin, pwmValue);
 }
+
+// --- Motor pin declarations and movement API ---
+// Motor Izquierdo
+const int L_IN1 = 26;
+const int L_IN2 = 27;
+const int L_ENA = 25;
+
+// Motor Derecho
+const int R_IN3 = 33;
+const int R_IN4 = 32;
+const int R_ENB = 14;
+
+// Configuración Global
+const int SAFETY_DELAY = 500; // ms
+int speed_global = 75;       // Velocidad global (0-100)
+
+// Función única para controlar dirección y velocidad
+// side: 0=Izquierda, 1=Derecha
+// pwr:  -100 (atrás) a 100 (adelante)
+void setMotor(int side, int pwr) {
+    pwr = constrain(pwr, -100, 100);
+    int pin1 = (side == 0) ? L_IN1 : R_IN3;
+    int pin2 = (side == 0) ? L_IN2 : R_IN4;
+    int pinPWM = (side == 0) ? L_ENA : R_ENB;
+
+    if (pwr > 0) {
+        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
+    } else if (pwr < 0) {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
+    } else {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
+    }
+
+    int pwmValue = abs(pwr) * 255 / 100;
+    analogWrite(pinPWM, pwmValue);
+}
+
+void stopMotors() {
+    setMotor(0, 0);
+    setMotor(1, 0);
+}
+
+void forward_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void back_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnLeft_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnRight_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void set_speed(int s) {
+    speed_global = constrain(s, 0, 100);
+}
 #endif
