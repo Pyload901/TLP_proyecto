@@ -5,7 +5,6 @@
 #include "ast.h"
 #include "semantic.h"
 static char* builtin_functions[] = {
-    "digitalWrite",
     "abs",
     "sqrt",
     "pow",
