@@ -23,10 +23,10 @@ Node *N_id(char *name) {
     node->value = strdup(name);
     return node;
 }
-Node *N_id_array(char *name, long index) {
+Node *N_id_array(char *name, Node *index) {
     Node *node = allocate_node("ID_ARRAY");
     node->value = strdup(name);
-    node->left = N_int(index);
+    node->left = index;
     return node;
 }
 Node *N_char(char c) {

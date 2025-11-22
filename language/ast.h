@@ -34,7 +34,7 @@ Node *N_char(char c);
 Node *N_int(long value);
 Node *N_float(double value);
 Node *N_bool(bool value);
-Node *N_id_array(char *name, long index);
+Node *N_id_array(char *name, Node *index);
 Node *N_bin(const char *op, Node *left, Node *right);
 Node *N_unary(const char *op, Node *X);
 Node *N_assign(Node *left, Node *right);

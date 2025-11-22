@@ -344,7 +344,7 @@ Node* parse_term_exp() {
         char* id_name = consume_identifier();
         if (current_token == LBRACKET) {
             expect(LBRACKET);
-            long index = consume_integer_value();
+            Node* index = parse_expression();
             expect(RBRACKET);
             return N_id_array(id_name, index);
         }

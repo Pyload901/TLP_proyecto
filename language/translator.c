@@ -350,22 +350,35 @@ static RegValue make_error_reg(void) {
     return r;
 }
 
-static RegValue array_element_address(Translator *tr, ArrayBinding *binding, long index) {
-    if (index < 0 || (size_t) index >= binding->length) {
-        translator_fail(tr, "Array index out of bounds");
+static RegValue array_element_address(Translator *tr, ArrayBinding *binding, RegValue index_reg) {
+    /* Calculate address: base_addr + index */
+    uint8_t base_reg = alloc_temp(tr);
+    if (tr->failed) {
+        if (index_reg.is_temp) release_temp(tr, index_reg.reg);
         return make_error_reg();
     }
-    uint32_t absolute = binding->base_addr + (uint32_t) index;
-    if (absolute > 255) {
-        translator_fail(tr, "Array address exceeds 8-bit immediate range");
-        return make_error_reg();
-    }
-    uint8_t addr_reg = alloc_temp(tr);
+    
+    /* Load base address into a register */
+    emit_load_const(tr, base_reg, (long) binding->base_addr);
+    
+    /* Add index to base address: base_reg = base_reg + index_reg */
+    emit_instruction(&tr->code, OP_ADD, base_reg, index_reg.reg);
+    /* Result is in R0, move it to base_reg */
+    emit_instruction(&tr->code, OP_LOAD, base_reg, 0);
+    
+    if (index_reg.is_temp) release_temp(tr, index_reg.reg);
+    
+    RegValue r = {base_reg, true};
+    return r;
+}
+
+static RegValue make_const_regvalue(Translator *tr, long value) {
+    uint8_t reg = alloc_temp(tr);
     if (tr->failed) {
         return make_error_reg();
     }
-    emit_load_const(tr, addr_reg, (long) absolute);
-    RegValue r = {addr_reg, true};
+    emit_load_const(tr, reg, value);
+    RegValue r = {reg, true};
     return r;
 }
 
@@ -575,11 +588,15 @@ static RegValue translate_expression(Translator *tr, Node *expr) {
             translator_fail(tr, "Use of undeclared array");
             return make_error_reg();
         }
-        if (!expr->left || strcmp(expr->left->node_type, "INT") != 0) {
-            translator_fail(tr, "Array index must be an integer literal");
+        if (!expr->left) {
+            translator_fail(tr, "Array index expression missing");
             return make_error_reg();
         }
-        RegValue addr = array_element_address(tr, binding, expr->left->ivalue);
+        /* Translate the index expression */
+        RegValue index = translate_expression(tr, expr->left);
+        if (tr->failed) return make_error_reg();
+        
+        RegValue addr = array_element_address(tr, binding, index);
         if (tr->failed) return make_error_reg();
         uint8_t dst = alloc_temp(tr);
         if (tr->failed) {
@@ -701,7 +718,12 @@ static bool translate_array_assignment(Translator *tr, ArrayBinding *array, Node
         Node *expr = values->list->items[i];
         RegValue val = translate_expression(tr, expr);
         if (tr->failed) return false;
-        RegValue addr = array_element_address(tr, array, (long) i);
+        RegValue index = make_const_regvalue(tr, (long) i);
+        if (tr->failed) {
+            if (val.is_temp) release_temp(tr, val.reg);
+            return false;
+        }
+        RegValue addr = array_element_address(tr, array, index);
         if (tr->failed) {
             if (val.is_temp) release_temp(tr, val.reg);
             return false;
@@ -715,7 +737,12 @@ static bool translate_array_assignment(Translator *tr, ArrayBinding *array, Node
         if (tr->failed) return false;
         emit_load_const(tr, zero, 0);
         for (; i < array->length; ++i) {
-            RegValue addr = array_element_address(tr, array, (long) i);
+            RegValue index = make_const_regvalue(tr, (long) i);
+            if (tr->failed) {
+                release_temp(tr, zero);
+                return false;
+            }
+            RegValue addr = array_element_address(tr, array, index);
             if (tr->failed) {
                 release_temp(tr, zero);
                 return false;
