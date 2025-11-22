@@ -1,6 +1,12 @@
 #ifndef UNIT_TESTING
 #include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
 #endif
+
+// --- SD Card Configuration ---
+#define CS_PIN 5
+#define VMCODE_FILE "/program.vmcode"
 
 // --- VM Configuration ---
 #define VM_STACK_SIZE 1024  // 1KB Stack for local variables/expressions
@@ -507,29 +513,164 @@ public:
     }
 };
 
-// --- Example Program ---
-// Removed PRINT and other special ops from example
-const uint8_t exampleProgram[] = {
-    LOADI, 0, 5,    // R0 = 5
-    LOADI, 1, 10,   // R1 = 10
-    ADD,   0, 1,    // R0 = R0 + R1 -> result will be in R0 per spec (ADD stores in R0)
-    HALT, 0, 0      // Stop
+// --- SD Card Functions ---
+#ifndef UNIT_TESTING
+
+bool initializeSD() {
+    Serial.println("\n--- INICIALIZANDO SD CARD ---");
+    
+    // Inicializar SPI explícitamente en pines estándar
+    SPI.begin(18, 19, 23, 5);
+    
+    // Intentar iniciar SD
+    if (!SD.begin(CS_PIN)) {
+        Serial.println("FALLO: No se detecta la tarjeta.");
+        return false;
+    }
+    
+    Serial.println("ÉXITO: Tarjeta SD detectada.");
+    return true;
+}
+
+// Map instruction names to opcodes - matches the opcodes in this VM
+struct OpcodeMapping {
+    const char* name;
+    uint8_t opcode;
 };
+
+const OpcodeMapping opcodeMap[] = {
+    {"NOP", 0x00},
+    {"ADD", 0x01}, {"SUB", 0x02}, {"MUL", 0x03}, {"DIV", 0x04}, {"MOD", 0x05},
+    {"AND", 0x06}, {"OR", 0x07}, {"XOR", 0x08}, {"NOT", 0x09}, {"CMP", 0x0A},
+    {"SHL", 0x0B}, {"SHR", 0x0C},
+    {"LOAD", 0x10}, {"LOADI", 0x11}, {"LOADI16", 0x12}, {"STORE", 0x13},
+    {"LOAD_ADDR", 0x14}, {"PUSH", 0x15}, {"POP", 0x16}, {"PEEK", 0x17}, {"LOADM", 0x18},
+    {"JMP", 0x20}, {"JZ", 0x21}, {"JNZ", 0x22}, {"JLT", 0x23}, {"JGT", 0x24},
+    {"JLE", 0x25}, {"JGE", 0x26}, {"CALL", 0x27}, {"RET", 0x28}, {"HALT", 0x29},
+    {"PRINT", 0x30}, {"TRAP", 0x31}
+};
+
+const int OPCODE_COUNT = sizeof(opcodeMap) / sizeof(OpcodeMapping);
+
+uint8_t findOpcode(const char* name) {
+    for (int i = 0; i < OPCODE_COUNT; i++) {
+        if (strcmp(opcodeMap[i].name, name) == 0) {
+            return opcodeMap[i].opcode;
+        }
+    }
+    return 0xFF; // Invalid opcode
+}
+
+// Global program storage
+uint8_t programBuffer[2048]; // Buffer para almacenar el programa
+size_t programSize = 0;
+
+bool loadProgramFromSD() {
+    Serial.println("--- CARGANDO PROGRAMA DESDE SD ---");
+    
+    File file = SD.open(VMCODE_FILE);
+    if (!file) {
+        Serial.print("ERROR: No se puede abrir el archivo ");
+        Serial.println(VMCODE_FILE);
+        return false;
+    }
+    
+    Serial.println("Archivo encontrado, parseando instrucciones...");
+    
+    programSize = 0;
+    char line[128];
+    int lineNum = 0;
+    
+    while (file.available() && programSize < sizeof(programBuffer) - 3) {
+        // Leer línea
+        int pos = 0;
+        while (file.available() && pos < sizeof(line) - 1) {
+            char c = file.read();
+            if (c == '\n' || c == '\r') break;
+            line[pos++] = c;
+        }
+        line[pos] = '\0';
+        lineNum++;
+        
+        // Skip empty lines and comments
+        if (pos == 0 || line[0] == '#') continue;
+        
+        // Parse instruction: OPCODE ARG1 ARG2
+        char opcode_str[16];
+        int arg1, arg2;
+        
+        if (sscanf(line, "%s %d %d", opcode_str, &arg1, &arg2) == 3) {
+            uint8_t opcode = findOpcode(opcode_str);
+            if (opcode != 0xFF) {
+                programBuffer[programSize++] = opcode;
+                programBuffer[programSize++] = (uint8_t)arg1;
+                programBuffer[programSize++] = (uint8_t)arg2;
+            } else {
+                Serial.print("ADVERTENCIA: Opcode desconocido en línea ");
+                Serial.print(lineNum);
+                Serial.print(": ");
+                Serial.println(opcode_str);
+            }
+        }
+    }
+    
+    file.close();
+    
+    Serial.print("Programa cargado: ");
+    Serial.print(programSize);
+    Serial.println(" bytes");
+    
+    return programSize > 0;
+}
+
+#endif
 
 TinyVM vm;
 
 #ifndef UNIT_TESTING
 void setup() {
     Serial.begin(115200);
+    while(!Serial) delay(10);
     delay(1000);
-    Serial.println("TinyVM Starting...");
+    
+    Serial.println("==============================================");
+    Serial.println("    TeoCompis VM - Cargador desde SD");
+    Serial.println("==============================================");
 
-    vm.loadProgram(exampleProgram, sizeof(exampleProgram));
+    // Inicializar SD card
+    if (!initializeSD()) {
+        Serial.println("ERROR CRÍTICO: No se puede inicializar SD");
+        Serial.println("Sistema detenido.");
+        return;
+    }
+    
+    // Cargar programa desde SD
+    if (!loadProgramFromSD()) {
+        Serial.println("ERROR CRÍTICO: No se puede cargar el programa desde SD");
+        Serial.println("Sistema detenido.");
+        return;
+    }
+    
+    Serial.println("--- INICIANDO EJECUCIÓN ---");
+    vm.loadProgram(programBuffer, programSize);
     vm.run();
+    
+    Serial.println("--- EJECUCIÓN COMPLETADA ---");
+    vm.dumpRegisters();
 }
 
 void loop() {
     // Nothing to do here
     delay(1000);
+}
+#endif
+
+// --- Helper Functions ---
+#ifndef UNIT_TESTING
+void pwm_write_pin(int pin, int pwmValue) {
+    // Mapeo de pines PWM para ESP32
+    // En Arduino usarías analogWrite, en ESP32 usamos ledcWrite
+    // Para simplicidad, vamos a usar analogWrite que debería funcionar
+    analogWrite(pin, pwmValue);
 }
 #endif
