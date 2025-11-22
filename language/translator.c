@@ -1030,7 +1030,7 @@ bool translate_program(Node *root, const char *output_path) {
     bool ok = translate_root(&tr, root);
     if (ok && !tr.failed) {
         emit_instruction(&tr.code, OP_HALT, 0, 0);
-        FILE *out = fopen(output_path, "wb");
+        FILE *out = fopen(output_path, "w");
         if (!out) {
             fprintf(stderr, "translator: unable to open %s for writing\n", output_path);
             ok = false;
@@ -1051,7 +1051,7 @@ bool translate_program(Node *root, const char *output_path) {
                 fprintf(out, "%-7s %3u %3u\n", opcode_name(op), arg1, arg2);
             }
             fclose(out);
-            fprintf(stderr, "translator: wrote %zu bytes to %s\n", tr.code.size, output_path);
+            fprintf(stderr, "translator: wrote %zu instructions to %s\n", count, output_path);
         }
     } else {
         ok = false;

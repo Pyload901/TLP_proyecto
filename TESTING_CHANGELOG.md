@@ -33,9 +33,10 @@ The suite currently includes the following tests:
 
 Several modifications were made to the translator to fix bugs and support the VM's requirements.
 
-### Binary Bytecode Output
-*   **Previous Behavior**: The translator generated a text-based assembly listing (e.g., `0000 LOADI 0 10`).
-*   **New Behavior**: The translator now writes **raw binary bytes** to `program.vmcode`. This is necessary because the VM expects a binary stream of opcodes and arguments, not text.
+### Text-Based Bytecode Output
+*   **Format**: The translator outputs a text file where each line represents an instruction: `MNEMONIC ARG1 ARG2`.
+*   **Reasoning**: This format is required for the ESP32 implementation, which will read the program from an SD card as a text file.
+*   **Test Runner Adaptation**: The `vm_runner.cpp` was updated to parse this text format and convert it to binary opcodes in memory before execution, simulating the loader behavior expected on the target hardware.
 
 ### Register Allocator Fix
 *   **The Issue**: The original register allocator used a simple stack-based approach (`temp_top`). This caused a critical bug in complex expressions (like loop conditions) where a temporary register holding a value was "freed" and reused prematurely, overwriting data needed for subsequent instructions.

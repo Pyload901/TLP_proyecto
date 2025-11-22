@@ -103,7 +103,7 @@ end
             "source": """
 start
   int a = 10;
-  int b = 20;
+  int b = 30;
   a = a + b;
 end
 """,
