@@ -605,18 +605,6 @@ bool loadProgramFromSD() {
                 programBuffer[programSize++] = opcode;
                 programBuffer[programSize++] = (uint8_t)arg1;
                 programBuffer[programSize++] = (uint8_t)arg2;
-                
-                Serial.print("Línea ");
-                Serial.print(lineNum);
-                Serial.print(": ");
-                Serial.print(opcode_str);
-                Serial.print(" -> [");
-                Serial.print(opcode, HEX);
-                Serial.print(" ");
-                Serial.print(arg1);
-                Serial.print(" ");
-                Serial.print(arg2);
-                Serial.println("]");
             } else {
                 Serial.print("ADVERTENCIA: Opcode desconocido en línea ");
                 Serial.print(lineNum);
@@ -663,12 +651,12 @@ void setup() {
         return;
     }
     
-    // Serial.println("--- INICIANDO EJECUCIÓN ---");
-    // vm.loadProgram(programBuffer, programSize);
-    // vm.run();
+    Serial.println("--- INICIANDO EJECUCIÓN ---");
+    vm.loadProgram(programBuffer, programSize);
+    vm.run();
     
-    // Serial.println("--- EJECUCIÓN COMPLETADA ---");
-    // vm.dumpRegisters();
+    Serial.println("--- EJECUCIÓN COMPLETADA ---");
+    vm.dumpRegisters();
 }
 
 void loop() {
