@@ -51,10 +51,10 @@ typedef enum {
     B_BACK          = 51, // registers[0]=ms
     B_TURN_LEFT     = 52, // registers[0]=ms
     B_TURN_RIGHT    = 53, // registers[0]=ms
-
+    B_STOP          = 55,
     // IR sensor builtins
     B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
-    B_READ_IR_RIGHT = 61 
+    B_READ_IR_RIGHT = 61
 } BuiltinTrapID;
 
 typedef struct {
@@ -311,6 +311,9 @@ static int get_builtin_trap_id(const char *name) {
     }
     if (strcmp(name, "readRightSensor") == 0) {
         return B_READ_IR_RIGHT;
+    }
+    if (strcmp(name, "stopMotors") == 0) {
+        return B_STOP;
     }
     return -1;  /* Not a builtin */
 }

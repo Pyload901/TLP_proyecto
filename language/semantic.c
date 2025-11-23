@@ -14,6 +14,7 @@ static char* builtin_functions[] = {
     "turnRight_ms",
     "readLeftSensor",
     "readRightSensor",
+    "stopMotors",
 };
 static char* builtin_constants[] = {
     "INPUT",

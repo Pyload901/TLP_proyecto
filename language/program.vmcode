@@ -13,4 +13,6 @@ RET       0   0
 # BLOCK
 LOADI     7  99
 PRINT     7   0
+TRAP     55   0
+LOAD      7   0
 HALT      0   0

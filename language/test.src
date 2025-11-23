@@ -4,4 +4,5 @@ void proc loop() start
 end
 start
     exec print(99);
+    exec stopMotors();
 end

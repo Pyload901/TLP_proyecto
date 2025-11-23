@@ -197,6 +197,9 @@ Node* parse_exec_fun() {
 }
 List* parse_args() {
     List* args = L_new();
+    if (current_token == RPAREN) {
+        return args;
+    }
     L_push(args, parse_expression());
     while (accept(COMMA)) {
         L_push(args, parse_expression());
