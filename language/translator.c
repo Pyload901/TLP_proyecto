@@ -7,6 +7,7 @@
 
 #define VM_NUM_REGISTERS 8
 #define MAX_ARRAY_BINDINGS 32
+#define MAX_LABELS 128
 
 /* Opcodes subset needed for the current translator */
 typedef enum {
@@ -130,6 +131,11 @@ typedef struct {
     bool in_function;
     bool failed;
     char error[256];
+    struct {
+        size_t start_index;
+        char *text;
+    } labels[MAX_LABELS];
+    size_t label_count;
 } Translator;
 
 typedef struct {
@@ -180,6 +186,7 @@ static void translator_init(Translator *tr) {
     tr->in_function = false;
     tr->failed = false;
     tr->error[0] = '\0';
+    tr->label_count = 0;
 }
 
 static void translator_destroy(Translator *tr) {
@@ -192,6 +199,9 @@ static void translator_destroy(Translator *tr) {
     }
     for (size_t i = 0; i < tr->function_count; ++i) {
         free(tr->functions[i].name);
+    }
+    for (size_t i = 0; i < tr->label_count; ++i) {
+        free(tr->labels[i].text);
     }
 }
 
@@ -487,6 +497,20 @@ static void cleanup_regvalues(Translator *tr, RegValue values[], size_t count) {
             release_temp(tr, values[i].reg);
         }
     }
+}
+
+static void push_label(Translator *tr, const char *text) {
+    if (tr->label_count >= MAX_LABELS) {
+        translator_fail(tr, "Too many labels generated for listing");
+        return;
+    }
+    tr->labels[tr->label_count].start_index = tr->code.size / 3;
+    tr->labels[tr->label_count].text = strdup(text);
+    if (!tr->labels[tr->label_count].text) {
+        translator_fail(tr, "Out of memory while recording label");
+        return;
+    }
+    tr->label_count++;
 }
 
 static RegValue translate_exec_expr(Translator *tr, Node *node) {
@@ -944,7 +968,10 @@ static bool translate_statement(Translator *tr, Node *stmt) {
 }
 
 static bool translate_block(Translator *tr, Node *block) {
-    if (!block->list) return true;
+    if (block) {
+        push_label(tr, "BLOCK");
+    }
+    if (!block || !block->list) return true;
     for (int i = 0; i < block->list->size; ++i) {
         if (!translate_statement(tr, block->list->items[i]) || tr->failed) {
             return false;
@@ -1105,6 +1132,11 @@ bool translate_program(Node *root, const char *output_path) {
                 for (size_t f = 0; f < tr.function_count; ++f) {
                     if (tr.functions[f].start_index == i) {
                         fprintf(out, "# FUNCTION %s\n", tr.functions[f].name);
+                    }
+                }
+                for (size_t l = 0; l < tr.label_count; ++l) {
+                    if (tr.labels[l].start_index == i) {
+                        fprintf(out, "# %s\n", tr.labels[l].text);
                     }
                 }
                 size_t base = i * 3;
