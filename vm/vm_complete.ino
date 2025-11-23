@@ -188,6 +188,7 @@ public:
     size_t programSize;
     Flags flags;
     size_t heap_top;
+    int loop_start_pc;
 
     TinyVM() { reset(); }
 
@@ -197,11 +198,16 @@ public:
         for(int i=0; i<VM_HEAP_SIZE; i++) heap[i] = 0;
         sp = 0; pc = 0; running = false; program = nullptr; programSize = 0;
         flags = Flags(); heap_top = 0;
+        loop_start_pc = -1;
     }
 
     void loadProgram(const uint8_t* code, size_t size) {
         program = code; programSize = size; pc = 0; running = true;
         Serial.println("Program Loaded.");
+    }
+
+    void setLoopStart(size_t addr) {
+        loop_start_pc = (int)addr;
     }
 
     void call_trap(uint8_t id) {
