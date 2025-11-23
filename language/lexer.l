@@ -21,6 +21,7 @@ extern yystype yylval;
 "char"              { yylval.type = "CHAR"; return TIPO; }
 "int"               { yylval.type = "INT"; return TIPO; }
 "float"             { yylval.type = "DOUBLE"; return TIPO; }
+"void"             { yylval.type = "VOID"; return TIPO; }
 "proc"              { return FUNCTION; }
 "return"              { return RETURN; }
 "exec"             { return EXEC; }

@@ -31,6 +31,7 @@ void  L_push(List*, Node*);
 Node *N(const char *type);
 Node *N_id(char *name);
 Node *N_char(char c);
+Node *N_void();
 Node *N_int(long value);
 Node *N_float(double value);
 Node *N_bool(bool value);

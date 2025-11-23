@@ -210,6 +210,9 @@ Node* parse_return() {
 }
 List* parse_decla_fun_args() {
     List* params = L_new();
+    if (current_token == RPAREN) {
+        return params;
+    }
     char* param_type = consume_type_name();
     char* param_name = consume_identifier();
     Node* param_node = N_decla(param_type, param_name, NULL);

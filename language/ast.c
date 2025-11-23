@@ -49,6 +49,10 @@ Node *N_bool(bool value) {
     node->bvalue = value;
     return node;
 }
+Node *N_void() {
+    Node *node = allocate_node("VOID");
+    return node;
+}
 Node *N_bin(const char *node_type, Node *left, Node *right) {
     Node *node = allocate_node(node_type);
     node->left = left;
