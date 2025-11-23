@@ -44,9 +44,16 @@ typedef enum {
 typedef enum {
     B_DIGITAL_READ  = 40,
     B_DIGITAL_WRITE = 41,
-    B_ANALOG_READ   = 42,
-    B_PWM_WRITE     = 44,
-    B_PIN_MODE      = 45
+
+    // Motor / Movement builtins
+    B_FORWARD       = 50, // registers[0]=ms
+    B_BACK          = 51, // registers[0]=ms
+    B_TURN_LEFT     = 52, // registers[0]=ms
+    B_TURN_RIGHT    = 53, // registers[0]=ms
+
+    // IR sensor builtins
+    B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
+    B_READ_IR_RIGHT = 61 
 } BuiltinTrapID;
 
 typedef struct {
@@ -264,20 +271,37 @@ static FunctionInfo *find_function_info(Translator *tr, const char *name) {
     return NULL;
 }
 
-/* Check if a function is a builtin and return its trap ID 
- * Returns -1 if not a builtin, -2 if it's print (special case), 
- * or the trap ID otherwise */
+/* Check if a function is a builtin and return its trap ID.
+ * -2 is reserved for the dedicated PRINT opcode, positive IDs map to TRAP handlers.
+ */
 static int get_builtin_trap_id(const char *name) {
     if (strcmp(name, "print") == 0) {
         return -2;  /* Special case: print has its own opcode */
     }
-    if (strcmp(name, "pinMode") == 0) {
-        return B_PIN_MODE;
+    if (strcmp(name, "digitalRead") == 0) {
+        return B_DIGITAL_READ;
     }
     if (strcmp(name, "digitalWrite") == 0) {
         return B_DIGITAL_WRITE;
     }
-    /* Note: abs, sqrt, pow don't have VM implementations yet */
+    if (strcmp(name, "forward_ms") == 0) {
+        return B_FORWARD;
+    }
+    if (strcmp(name, "back_ms") == 0) {
+        return B_BACK;
+    }
+    if (strcmp(name, "turnLeft_ms") == 0) {
+        return B_TURN_LEFT;
+    }
+    if (strcmp(name, "turnRight_ms") == 0) {
+        return B_TURN_RIGHT;
+    }
+    if (strcmp(name, "readLeftSensor") == 0) {
+        return B_READ_IR_LEFT;
+    }
+    if (strcmp(name, "readRightSensor") == 0) {
+        return B_READ_IR_RIGHT;
+    }
     return -1;  /* Not a builtin */
 }
 
