@@ -137,23 +137,59 @@ void stopMotors() {
 }
 
 void forward_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, speed_global);
+    int pwmValue = 255;
+
+    // Izquierdo hacia adelante
+    digitalWrite(L_IN1, HIGH);
+    digitalWrite(L_IN2, LOW);
+    // Derecho hacia adelante
+    digitalWrite(R_IN3, HIGH);
+    digitalWrite(R_IN4, LOW);
+
+    analogWrite(L_ENA, pwmValue);
+    analogWrite(R_ENB, pwmValue);
 }
 
 void back_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, -speed_global);
+    int pwmValue = -255;
+
+    // Izquierdo hacia atrás
+    digitalWrite(L_IN1, LOW);
+    digitalWrite(L_IN2, HIGH);
+    // Derecho hacia atrás
+    digitalWrite(R_IN3, LOW);
+    digitalWrite(R_IN4, HIGH);
+
+    analogWrite(L_ENA, pwmValue);
+    analogWrite(R_ENB, pwmValue);
 }
 
 void turnLeft_ms(int ms) {
-    setMotor(0, 0);
-    setMotor(1, speed_global);
+    int pwmValue = 255;
+
+    // Parar lado izquierdo
+    digitalWrite(L_IN1, LOW);
+    digitalWrite(L_IN2, LOW);
+    analogWrite(L_ENA, 0);
+
+    // Mover lado derecho hacia adelante
+    digitalWrite(R_IN3, HIGH);
+    digitalWrite(R_IN4, LOW);
+    analogWrite(R_ENB, pwmValue);
 }
 
 void turnRight_ms(int ms) {
-    setMotor(1, 0);
-    setMotor(0, speed_global);
+    int pwmValue = 255;
+
+    // Mover lado izquierdo hacia adelante
+    digitalWrite(L_IN1, HIGH);
+    digitalWrite(L_IN2, LOW);
+    analogWrite(L_ENA, pwmValue);
+
+    // Parar lado derecho
+    digitalWrite(R_IN3, LOW);
+    digitalWrite(R_IN4, LOW);
+    analogWrite(R_ENB, 0);
 }
 
 void set_speed(int s) {
@@ -677,7 +713,6 @@ bool loadProgramFromSD() {
 void setup() {
     Serial.begin(115200);
     while(!Serial) delay(10);
-    delay(1000);
     
     Serial.println("==============================================");
     Serial.println("    TeoCompis VM - Cargador desde SD");
