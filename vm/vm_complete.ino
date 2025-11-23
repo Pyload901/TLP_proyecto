@@ -111,14 +111,20 @@ void setMotor(int side, int pwr) {
 
     if (pwr > 0) {
         digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
+        int pwmValue = abs(pwr) * 255 / 100;
+        analogWrite(pinPWM, pwmValue);
     } else if (pwr < 0) {
         digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
+        int pwmValue = abs(pwr) * 255 / 100;
+        analogWrite(pinPWM, pwmValue);
     } else {
         digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
+        int pwmValue = abs(pwr) * 255 / 100;
+        analogWrite(L_ENA, pwmValue);
+        analogWrite(R_ENB, pwmValue);
     }
 
-    int pwmValue = abs(pwr) * 255 / 100;
-    analogWrite(pinPWM, pwmValue);
+    
 }
 
 void stopMotors() {
