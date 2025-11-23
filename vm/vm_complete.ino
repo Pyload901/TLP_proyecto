@@ -290,12 +290,14 @@ public:
             case B_READ_IR_LEFT: {
                 lecturaSensorIzq = analogRead(sensorIzqPin);
                 bool result = lecturaSensorIzq < 1500 ? 1 : 0;
+                Serial.print("Left IR Sensor: "); Serial.println(lecturaSensorIzq);
                 registers[0] = result;
                 break;
             }
             case B_READ_IR_RIGHT: {
                 lecturaSensorDer = analogRead(sensorDerPin);
                 bool result = lecturaSensorDer < 1500 ? 1 : 0;
+                Serial.print("Right IR Sensor: "); Serial.println(lecturaSensorDer);
                 registers[0] = result;
                 break;
             }
