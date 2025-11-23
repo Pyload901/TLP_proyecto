@@ -128,7 +128,55 @@ enum BuiltinID_IO {
     B_READ_IR_RIGHT = 61  // returns right sensor reading in R0
 };
 
-// --- VM Class ---
+// =========================
+// === GLOBAL VARIABLES ===
+// =========================
+
+// --- Motor pin declarations ---
+const int L_IN1 = 26;
+const int L_IN2 = 27;
+const int L_ENA = 25;
+const int R_IN3 = 33;
+const int R_IN4 = 32;
+const int R_ENB = 14;
+const int SAFETY_DELAY = 500; // ms
+int speed_global = 75;       // Velocidad global (0-100)
+
+// --- IR Sensors configuration ---
+const int sensorIzqPin = 34; // ADC1_CH6
+const int sensorDerPin = 35; // ADC1_CH7
+int lecturaSensorIzq = 0;
+int lecturaSensorDer = 0;
+int umbralIzq = 1500;
+int umbralDer = 1500;
+
+// Global program storage
+uint8_t programBuffer[2048]; // Buffer para almacenar el programa
+size_t programSize = 0;
+
+// =========================
+// === FUNCTION PROTOTYPES ===
+// =========================
+
+#ifndef UNIT_TESTING
+void pwm_write_pin(int pin, int pwmValue);
+void setMotor(int side, int pwr);
+void stopMotors();
+void forward_ms(int ms);
+void back_ms(int ms);
+void turnLeft_ms(int ms);
+void turnRight_ms(int ms);
+void set_speed(int s);
+void initSensors();
+bool initializeSD();
+uint8_t findOpcode(const char* name);
+bool loadProgramFromSD();
+#endif
+
+// =========================
+// === VM CLASS ===
+// =========================
+
 class TinyVM {
 public:
     int32_t registers[NUM_REGISTERS];
@@ -579,8 +627,88 @@ public:
     }
 };
 
-// --- SD Card Functions ---
+TinyVM vm;
+
+// =========================
+// === FUNCTION IMPLEMENTATIONS ===
+// =========================
+
 #ifndef UNIT_TESTING
+
+void pwm_write_pin(int pin, int pwmValue) {
+    // Mapeo de pines PWM para ESP32
+    // En Arduino usarías analogWrite, en ESP32 usamos ledcWrite
+    // Para simplicidad, vamos a usar analogWrite que debería funcionar
+    analogWrite(pin, pwmValue);
+}
+
+// Función única para controlar dirección y velocidad
+// side: 0=Izquierda, 1=Derecha
+// pwr:  -100 (atrás) a 100 (adelante)
+void setMotor(int side, int pwr) {
+    pwr = constrain(pwr, -100, 100);
+    int pin1 = (side == 0) ? L_IN1 : R_IN3;
+    int pin2 = (side == 0) ? L_IN2 : R_IN4;
+    int pinPWM = (side == 0) ? L_ENA : R_ENB;
+
+    if (pwr > 0) {
+        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
+    } else if (pwr < 0) {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
+    } else {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
+    }
+
+    int pwmValue = abs(pwr) * 255 / 100;
+    analogWrite(pinPWM, pwmValue);
+}
+
+void stopMotors() {
+    setMotor(0, 0);
+    setMotor(1, 0);
+}
+
+void forward_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void back_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnLeft_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnRight_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void set_speed(int s) {
+    speed_global = constrain(s, 0, 100);
+}
+
+void initSensors() {
+    // Set motor control pins as outputs
+    pinMode(L_IN1, OUTPUT); pinMode(L_IN2, OUTPUT); pinMode(L_ENA, OUTPUT);
+    pinMode(R_IN3, OUTPUT); pinMode(R_IN4, OUTPUT); pinMode(R_ENB, OUTPUT);
+    
+    // Set ADC pins as input
+    pinMode(sensorIzqPin, INPUT);
+    pinMode(sensorDerPin, INPUT);
+}
 
 bool initializeSD() {
     Serial.println("\n--- INICIALIZANDO SD CARD ---");
@@ -626,10 +754,6 @@ uint8_t findOpcode(const char* name) {
     }
     return 0xFF; // Invalid opcode
 }
-
-// Global program storage
-uint8_t programBuffer[2048]; // Buffer para almacenar el programa
-size_t programSize = 0;
 
 bool loadProgramFromSD() {
     Serial.println("--- CARGANDO PROGRAMA DESDE SD ---");
@@ -689,16 +813,6 @@ bool loadProgramFromSD() {
     return programSize > 0;
 }
 
-#endif
-
-TinyVM vm;
-
-// Forward declaration for sensor init so setup() can call it
-#ifndef UNIT_TESTING
-void initSensors();
-#endif
-
-#ifndef UNIT_TESTING
 void setup() {
     Serial.begin(115200);
     while(!Serial) delay(10);
@@ -707,6 +821,9 @@ void setup() {
     Serial.println("==============================================");
     Serial.println("    TeoCompis VM - Cargador desde SD");
     Serial.println("==============================================");
+
+    // Inicializar sensores y motores
+    initSensors();
 
     // Inicializar SD card
     if (!initializeSD()) {
@@ -734,6 +851,7 @@ void loop() {
     // Nothing to do here
     delay(1000);
 }
+
 #endif
 
 // --- Helper Functions ---
@@ -817,7 +935,6 @@ void turnRight_ms(int ms) {
 void set_speed(int s) {
     speed_global = constrain(s, 0, 100);
 }
-#endif
 
 // --- IR Sensors configuration ---
 // Note: in your comment the left/right pins were swapped; follow given values
@@ -830,16 +947,9 @@ int umbralIzq = 1500;
 int umbralDer = 1500;
 
 // Helper to initialize sensor pins and ADC channels
-#ifndef UNIT_TESTING
 void initSensors() {
     // Set motor control pins as outputs already set elsewhere; set ADC pins as input
     pinMode(sensorIzqPin, INPUT);
     pinMode(sensorDerPin, INPUT);
-    
-    // Setup PWM channels for ESP32 if needed (using ledc)
-    ledcSetup(0, 2000, 8);
-    ledcSetup(1, 2000, 8);
-    ledcAttachPin(L_ENA, 0);
-    ledcAttachPin(R_ENB, 1);
 }
 #endif
