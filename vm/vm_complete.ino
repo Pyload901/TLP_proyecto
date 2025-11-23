@@ -79,7 +79,7 @@ const int R_IN3 = 33;
 const int R_IN4 = 32;
 const int R_ENB = 14;
 const int SAFETY_DELAY = 500;
-int speed_global = 250;
+int speed_global = 255;
 
 // --- IR Sensors configuration ---
 const int sensorIzqPin = 34;
