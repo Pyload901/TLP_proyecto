@@ -105,26 +105,30 @@ void pwm_write_pin(int pin, int pwmValue) {
 
 void setMotor(int side, int pwr) {
     pwr = constrain(pwr, -100, 100);
+    
+    // Definir pines según el lado (0 = Izquierda, 1 = Derecha)
     int pin1 = (side == 0) ? L_IN1 : R_IN3;
     int pin2 = (side == 0) ? L_IN2 : R_IN4;
     int pinPWM = (side == 0) ? L_ENA : R_ENB;
 
-    if (pwr > 0) {
-        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
-        int pwmValue = abs(pwr) * 255 / 100;
-        analogWrite(pinPWM, pwmValue);
-    } else if (pwr < 0) {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
-        int pwmValue = abs(pwr) * 255 / 100;
-        analogWrite(pinPWM, pwmValue);
-    } else {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
-        int pwmValue = abs(pwr) * 255 / 100;
-        analogWrite(L_ENA, pwmValue);
-        analogWrite(R_ENB, pwmValue);
-    }
+    int pwmValue = abs(pwr) * 255 / 100;
 
+    if (pwr > 0) {
+        // Hacia adelante
+        digitalWrite(pin1, HIGH);
+        digitalWrite(pin2, LOW);
+    } else if (pwr < 0) {
+        // Hacia atrás
+        digitalWrite(pin1, LOW);
+        digitalWrite(pin2, HIGH);
+    } else {
+        // Detener
+        digitalWrite(pin1, LOW);
+        digitalWrite(pin2, LOW);
+        pwmValue = 0;
+    }
     
+    analogWrite(pinPWM, pwmValue);
 }
 
 void stopMotors() {
@@ -135,21 +139,37 @@ void stopMotors() {
 void forward_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, speed_global);
+    if (ms > 0) {
+        delay(ms);
+        stopMotors();
+    }
 }
 
 void back_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, -speed_global);
+    if (ms > 0) {
+        delay(ms);
+        stopMotors();
+    }
 }
 
 void turnLeft_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, speed_global);
+    if (ms > 0) {
+        delay(ms);
+        stopMotors();
+    }
 }
 
 void turnRight_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, -speed_global);
+    if (ms > 0) {
+        delay(ms);
+        stopMotors();
+    }
 }
 
 void set_speed(int s) {
