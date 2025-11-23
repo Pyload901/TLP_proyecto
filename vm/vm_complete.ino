@@ -127,8 +127,7 @@ void setMotor(int side, int pwr) {
         // Detener
         digitalWrite(pin1, LOW);
         digitalWrite(pin2, LOW);
-        analogWrite(L_ENA, 255);
-        analogWrite(R_ENB, 255);
+        analogWrite(pinPWM, 0);
     }
 }
 
@@ -148,13 +147,13 @@ void back_ms(int ms) {
 }
 
 void turnLeft_ms(int ms) {
-    setMotor(0, -speed_global);
+    setMotor(0, 0);
     setMotor(1, speed_global);
 }
 
 void turnRight_ms(int ms) {
+    setMotor(1, 0);
     setMotor(0, speed_global);
-    setMotor(1, -speed_global);
 }
 
 void set_speed(int s) {
