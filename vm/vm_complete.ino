@@ -159,11 +159,17 @@ void set_speed(int s) {
 }
 
 void initSensors() {
-    pinMode(L_IN1, OUTPUT); pinMode(L_IN2, OUTPUT); pinMode(L_ENA, OUTPUT);
-    pinMode(R_IN3, OUTPUT); pinMode(R_IN4, OUTPUT); pinMode(R_ENB, OUTPUT);
+    // Set motor control pins as outputs
+    pinMode(L_IN1, OUTPUT);
+    pinMode(L_IN2, OUTPUT);
+    pinMode(R_IN3, OUTPUT);
+    pinMode(R_IN4, OUTPUT);
+    
+    // Set ADC pins as input
     pinMode(sensorIzqPin, INPUT);
     pinMode(sensorDerPin, INPUT);
-}
+    
+    // Setup PWM channels for ESP32 if needed (using ledc)
 
 bool initializeSD() {
     Serial.println("\n--- INICIALIZANDO SD CARD ---");
@@ -228,6 +234,12 @@ bool loadProgramFromSD() {
         line[pos] = '\0';
         lineNum++;
         
+        // Check for loop label marker (supports "# .loop" or "# FUNCTION loop")
+        if (strstr(line, "# .loop") != NULL || strstr(line, "# FUNCTION loop") != NULL) {
+            vm.setLoopStart(programSize);
+            continue;
+        }
+
         if (pos == 0 || line[0] == '#') continue;
         
         char opcode_str[16];
@@ -274,6 +286,9 @@ public:
     size_t programSize;
     Flags flags;
     size_t heap_top;
+    
+    // Address of the user's loop function (if any)
+    int loop_start_pc = -1;
 
     TinyVM() { reset(); }
 
@@ -283,6 +298,13 @@ public:
         for(int i=0; i<VM_HEAP_SIZE; i++) heap[i] = 0;
         sp = 0; pc = 0; running = false; program = nullptr; programSize = 0;
         flags = Flags(); heap_top = 0;
+        loop_start_pc = -1;
+    }
+
+    void setLoopStart(int addr) {
+        loop_start_pc = addr;
+        Serial.print("Loop start set to: ");
+        Serial.println(addr);
     }
 
     void loadProgram(const uint8_t* code, size_t size) {
@@ -578,6 +600,7 @@ public:
                 }
                 break;
             case RET:
+                // pop return address
                 if (sp >= 2) {
                     sp -= 2;
                     uint32_t low = (uint32_t)stack[sp];
@@ -585,7 +608,8 @@ public:
                     uint32_t ret = (high << 16) | (low & 0xFFFF);
                     pc = (uint16_t)ret;
                 } else {
-                    Serial.println("Error: RET with empty stack");
+                    // If stack is empty, we assume we returned from the main loop function
+                    // Clean exit from the loop iteration
                     running = false;
                 }
                 break;
@@ -610,6 +634,19 @@ public:
     }
 
     void run() {
+        while (running) {
+            step();
+        }
+    }
+
+    // Execute one iteration of the user's loop function
+    void runLoop() {
+        if (loop_start_pc == -1) return;
+        
+        pc = (uint16_t)loop_start_pc;
+        sp = 0; // Reset stack for new iteration
+        running = true;
+        
         while (running) {
             step();
         }
@@ -654,13 +691,23 @@ void setup() {
         return;
     }
     
-    Serial.println("--- INICIANDO EJECUCIÓN ---");
+    Serial.println("--- INICIANDO EJECUCIÓN (SETUP) ---");
     vm.loadProgram(programBuffer, programSize);
+    
+    // Run setup code (everything before the loop or until HALT)
+    // If loop_start_pc is set, we might want to stop before it?
+    // But usually setup code ends with HALT or falls through.
+    // For now, we just run. If it hits HALT, it stops.
     vm.run();
     
-    Serial.println("--- EJECUCIÓN COMPLETADA ---");
+    Serial.println("--- SETUP COMPLETADO ---");
     vm.dumpRegisters();
 }
+
+void loop() {
+    //   // delay(1); 
+}
+#endif
 
 void loop() {
     delay(1000);
