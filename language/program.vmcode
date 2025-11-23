@@ -11,13 +11,13 @@ LOAD      7   0
 LOAD      2   7
 PRINT     1   0
 PRINT     2   0
-LOADI     7   0
+LOADI     7   1
 CMP       1   7
 JZ       42   0
 LOADI     6   0
 JMP      45   0
 LOADI     6   1
-LOADI     7   0
+LOADI     7   1
 CMP       2   7
 JZ       60   0
 LOADI     5   0
@@ -83,6 +83,4 @@ TRAP     52   0
 LOAD      7   0
 RET       0   0
 # BLOCK
-TRAP     55   0
-LOAD      7   0
 HALT      0   0
