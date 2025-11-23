@@ -103,39 +103,6 @@ void pwm_write_pin(int pin, int pwmValue) {
     analogWrite(pin, pwmValue);
 }
 
-void setMotor(int side, int pwr) {
-    pwr = constrain(pwr, -100, 100);
-    
-    // Definir pines según el lado (0 = Izquierda, 1 = Derecha)
-    int pin1 = (side == 0) ? L_IN1 : R_IN3;
-    int pin2 = (side == 0) ? L_IN2 : R_IN4;
-    int pinPWM = (side == 0) ? L_ENA : R_ENB;
-
-    if (pwr > 0) {
-        // Hacia adelante
-        digitalWrite(pin1, HIGH);
-        digitalWrite(pin2, LOW);
-        int pwmValue = abs(pwr) * 255 / 100;
-        analogWrite(pinPWM, pwmValue);
-    } else if (pwr < 0) {
-        // Hacia atrás
-        digitalWrite(pin1, LOW);
-        digitalWrite(pin2, HIGH);
-        int pwmValue = abs(pwr) * 255 / 100;
-        analogWrite(pinPWM, pwmValue);
-    } else {
-        // Detener
-        digitalWrite(pin1, LOW);
-        digitalWrite(pin2, LOW);
-        analogWrite(pinPWM, 0);
-    }
-}
-
-void stopMotors() {
-    setMotor(0, 0);
-    setMotor(1, 0);
-}
-
 void forward_ms(int ms) {
     int pwmValue = 255;
 
@@ -304,7 +271,8 @@ public:
                 break;
             }
             case B_STOP: {
-                stopMotors();
+                // stop functionality removed — no hardware interaction
+                // keep as no-op to avoid calls to removed functions
                 break;
             }
             case B_READ_IR_LEFT: {
