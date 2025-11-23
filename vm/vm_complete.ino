@@ -97,6 +97,82 @@ size_t programSize = 0;
 // === FUNCTION IMPLEMENTATIONS ===
 // =========================
 
+#ifndef UNIT_TESTING
+
+void pwm_write_pin(int pin, int pwmValue) {
+    analogWrite(pin, pwmValue);
+}
+
+void setMotor(int side, int pwr) {
+    pwr = constrain(pwr, -100, 100);
+    int pin1 = (side == 0) ? L_IN1 : R_IN3;
+    int pin2 = (side == 0) ? L_IN2 : R_IN4;
+    int pinPWM = (side == 0) ? L_ENA : R_ENB;
+
+    if (pwr > 0) {
+        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
+    } else if (pwr < 0) {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
+    } else {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
+    }
+
+    int pwmValue = abs(pwr) * 255 / 100;
+    analogWrite(pinPWM, pwmValue);
+}
+
+void stopMotors() {
+    setMotor(0, 0);
+    setMotor(1, 0);
+}
+
+void forward_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void back_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnLeft_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnRight_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void set_speed(int s) {
+    speed_global = constrain(s, 0, 100);
+}
+
+void initSensors() {
+    // Set motor control pins as outputs
+    pinMode(L_IN1, OUTPUT);
+    pinMode(L_IN2, OUTPUT);
+    pinMode(R_IN3, OUTPUT);
+    pinMode(R_IN4, OUTPUT);
+    
+    // Set ADC pins as input
+    pinMode(sensorIzqPin, INPUT);
+    pinMode(sensorDerPin, INPUT);
+    
+    // Setup PWM channels for ESP32 if needed (using ledc)
+}
+#endif
+
 // =========================
 // === VM CLASS ===
 // =========================
@@ -479,80 +555,9 @@ public:
 };
 
 TinyVM vm;
+
 #ifndef UNIT_TESTING
 
-void pwm_write_pin(int pin, int pwmValue) {
-    analogWrite(pin, pwmValue);
-}
-
-void setMotor(int side, int pwr) {
-    pwr = constrain(pwr, -100, 100);
-    int pin1 = (side == 0) ? L_IN1 : R_IN3;
-    int pin2 = (side == 0) ? L_IN2 : R_IN4;
-    int pinPWM = (side == 0) ? L_ENA : R_ENB;
-
-    if (pwr > 0) {
-        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
-    } else if (pwr < 0) {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
-    } else {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
-    }
-
-    int pwmValue = abs(pwr) * 255 / 100;
-    analogWrite(pinPWM, pwmValue);
-}
-
-void stopMotors() {
-    setMotor(0, 0);
-    setMotor(1, 0);
-}
-
-void forward_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void back_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnLeft_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnRight_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void set_speed(int s) {
-    speed_global = constrain(s, 0, 100);
-}
-
-void initSensors() {
-    // Set motor control pins as outputs
-    pinMode(L_IN1, OUTPUT);
-    pinMode(L_IN2, OUTPUT);
-    pinMode(R_IN3, OUTPUT);
-    pinMode(R_IN4, OUTPUT);
-    
-    // Set ADC pins as input
-    pinMode(sensorIzqPin, INPUT);
-    pinMode(sensorDerPin, INPUT);
-    
-    // Setup PWM channels for ESP32 if needed (using ledc)
-}
 bool initializeSD() {
     Serial.println("\n--- INICIALIZANDO SD CARD ---");
     SPI.begin(18, 19, 23, 5);

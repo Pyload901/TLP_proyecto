@@ -2,6 +2,7 @@
 # format: <index> <mnemonic> <arg1> <arg2>
 JMP      24   0
 # FUNCTION loop
+# BLOCK
 LOADI     7  14
 PRINT     7   0
 LOADI     7   0
@@ -9,6 +10,7 @@ LOAD      1   7
 TRAP     50   0
 LOAD      7   0
 RET       0   0
+# BLOCK
 LOADI     7  99
 PRINT     7   0
 HALT      0   0
