@@ -14,53 +14,19 @@
 #define NUM_REGISTERS 8     // R0-R7
 
 // --- Opcodes ---
-// Reworked to match the provided opcode table (special opcodes removed)
 enum Opcode {
-    // Arithmetic & Logic (0x00 - 0x0C)
     NOP   = 0x00,
-    ADD   = 0x01, // R0 = ARG1 + ARG2  (stores result in R0)
-    SUB   = 0x02,
-    MUL   = 0x03,
-    DIV   = 0x04, // div by zero -> R0 = 0
-    MOD   = 0x05,
-    AND   = 0x06,
-    OR    = 0x07,
-    XOR   = 0x08,
-    NOT   = 0x09, // unary: R0 = ~ARG1
-    CMP   = 0x0A, // sets flags
-    SHL   = 0x0B, // shift left (ARG2 immediate)
-    SHR   = 0x0C, // shift right (ARG2 immediate)
-
-    // Memory Access (0x10 - 0x17)
-    LOAD   = 0x10, // LOAD R,R   -> R[ARG1] = R[ARG2]
-    LOADI  = 0x11, // LOADI R,I  -> R[ARG1] = ARG2 (8-bit immediate)
-    LOADI16= 0x12, // LOADI16 R,I -> R[ARG1] = NEXT_WORD (16-bit immediate)
-    STORE  = 0x13, // STORE R,R  -> M[R[ARG1]] = R[ARG2]
-    LOAD_ADDR = 0x14, // LOAD_ADDR R,I -> R[ARG1] = heap_base + ARG2
-    PUSH   = 0x15,
-    POP    = 0x16,
-    PEEK   = 0x17, // PEEK R,I -> R[ARG1] = STACK[SP+ARG2]
-    LOADM  = 0x18, // LOADM R,R -> R[ARG1] = M[R[ARG2]]
-
-    // Control Flow (0x20 - 0x29)
-    JMP   = 0x20, // PC = ARG1 | (ARG2 << 8)
-    JZ    = 0x21,
-    JNZ   = 0x22,
-    JLT   = 0x23,
-    JGT   = 0x24,
-    JLE   = 0x25,
-    JGE   = 0x26,
-    CALL  = 0x27,
-    RET   = 0x28,
-    HALT  = 0x29,
-
-    // Special (keep PRINT, add TRAP for builtins)
-    PRINT = 0x30, // PRINT R -> Serial / mock print
-    TRAP  = 0x31  // TRAP id -> call builtin (args in registers, result in R0)
+    ADD   = 0x01, SUB   = 0x02, MUL   = 0x03, DIV   = 0x04, MOD   = 0x05,
+    AND   = 0x06, OR    = 0x07, XOR   = 0x08, NOT   = 0x09, CMP   = 0x0A,
+    SHL   = 0x0B, SHR   = 0x0C,
+    LOAD   = 0x10, LOADI  = 0x11, LOADI16= 0x12, STORE  = 0x13,
+    LOAD_ADDR = 0x14, PUSH   = 0x15, POP    = 0x16, PEEK   = 0x17, LOADM  = 0x18,
+    JMP   = 0x20, JZ    = 0x21, JNZ   = 0x22, JLT   = 0x23, JGT   = 0x24,
+    JLE   = 0x25, JGE   = 0x26, CALL  = 0x27, RET   = 0x28, HALT  = 0x29,
+    PRINT = 0x30, TRAP  = 0x31
 };
 
 // --- Instruction Format ---
-// 3 Bytes: [OPCODE] [ARG1] [ARG2]
 struct Instruction {
     uint8_t opcode;
     uint8_t arg1;
@@ -80,52 +46,25 @@ struct Flags {
 // === BUILTIN / PIN MAP ===
 // =========================
 
-// Optional logical->physical pin map. Compiler (option 1) may emit physical pins directly
-// or logical indices; VM will resolve logical indices via this table.
-// If you prefer purely physical pins, set LOGICAL_PIN_COUNT to 0.
 static const int LOGICAL_PIN_COUNT = 12;
-//TODO - check if these pin numbers are suitable our board
 static const int pin_map[LOGICAL_PIN_COUNT] = {
-    /* 0.. */ 2,
-    /* 1.. */ 4,
-    /* 2.. */ 5,
-    /* 3.. */ 18,
-    /* 4.. */ 19,
-    /* 5.. */ 21,
-    /* 6.. */ 32,
-    /* 7.. */ 33,
-    /* 8.. */ 34,
-    /* 9.. */ 35,
-    /*10.. */ 25,
-    /*11.. */ 26
+    2, 4, 5, 18, 19, 21, 32, 33, 34, 35, 25, 26
 };
 
 static inline int resolve_pin(int logical_or_physical) {
     if (LOGICAL_PIN_COUNT > 0 && logical_or_physical >= 0 && logical_or_physical < LOGICAL_PIN_COUNT) {
         return pin_map[logical_or_physical];
     }
-    return logical_or_physical; // treat as physical pin
+    return logical_or_physical;
 }
 
-// Builtin TRAP IDs (used with TRAP opcode; TRAP arg1 == id)
+// Builtin TRAP IDs
 enum BuiltinID_IO {
-    B_DIGITAL_READ  = 40,
-    B_DIGITAL_WRITE = 41,
-    B_ANALOG_READ   = 42,
-    B_PWM_WRITE     = 44,
-    B_PIN_MODE      = 45,  // <- nuevo
-
-    // Motor / Movement builtins
-    B_FORWARD       = 50, // registers[0]=ms
-    B_BACK          = 51, // registers[0]=ms
-    B_TURN_LEFT     = 52, // registers[0]=ms
-    B_TURN_RIGHT    = 53, // registers[0]=ms
-    B_SET_SPEED     = 54, // registers[0]=speed(0-100)
-    B_STOP          = 55, // no args
-
-    // IR sensor builtins
-    B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
-    B_READ_IR_RIGHT = 61  // returns right sensor reading in R0
+    B_DIGITAL_READ  = 40, B_DIGITAL_WRITE = 41, B_ANALOG_READ   = 42,
+    B_PWM_WRITE     = 44, B_PIN_MODE      = 45,
+    B_FORWARD       = 50, B_BACK          = 51, B_TURN_LEFT     = 52,
+    B_TURN_RIGHT    = 53, B_SET_SPEED     = 54, B_STOP          = 55,
+    B_READ_IR_LEFT  = 60, B_READ_IR_RIGHT = 61
 };
 
 // =========================
@@ -139,495 +78,20 @@ const int L_ENA = 25;
 const int R_IN3 = 33;
 const int R_IN4 = 32;
 const int R_ENB = 14;
-const int SAFETY_DELAY = 500; // ms
-int speed_global = 75;       // Velocidad global (0-100)
+const int SAFETY_DELAY = 500;
+int speed_global = 75;
 
 // --- IR Sensors configuration ---
-const int sensorIzqPin = 34; // ADC1_CH6
-const int sensorDerPin = 35; // ADC1_CH7
+const int sensorIzqPin = 34;
+const int sensorDerPin = 35;
 int lecturaSensorIzq = 0;
 int lecturaSensorDer = 0;
 int umbralIzq = 1500;
 int umbralDer = 1500;
 
 // Global program storage
-uint8_t programBuffer[2048]; // Buffer para almacenar el programa
+uint8_t programBuffer[2048];
 size_t programSize = 0;
-
-// =========================
-// === FUNCTION PROTOTYPES ===
-// =========================
-
-#ifndef UNIT_TESTING
-void pwm_write_pin(int pin, int pwmValue);
-void setMotor(int side, int pwr);
-void stopMotors();
-void forward_ms(int ms);
-void back_ms(int ms);
-void turnLeft_ms(int ms);
-void turnRight_ms(int ms);
-void set_speed(int s);
-void initSensors();
-bool initializeSD();
-uint8_t findOpcode(const char* name);
-bool loadProgramFromSD();
-#endif
-
-// =========================
-// === VM CLASS ===
-// =========================
-
-class TinyVM {
-public:
-    int32_t registers[NUM_REGISTERS];
-    int32_t stack[VM_STACK_SIZE];
-    uint8_t heap[VM_HEAP_SIZE];
-
-    uint16_t sp; // Stack pointer (next free index)
-    uint16_t pc; // Program Counter (byte index)
-    bool running;
-
-    const uint8_t* program;
-    size_t programSize;
-
-    Flags flags;
-
-    // simple bump allocator base (kept for LOAD_ADDR/STORE use)
-    size_t heap_top;
-
-    TinyVM() {
-        reset();
-    }
-
-    void reset() {
-        for(int i=0; i<NUM_REGISTERS; i++) registers[i] = 0;
-        for(int i=0; i<VM_STACK_SIZE; i++) stack[i] = 0;
-        for(int i=0; i<VM_HEAP_SIZE; i++) heap[i] = 0;
-        sp = 0;
-        pc = 0;
-        running = false;
-        program = nullptr;
-        programSize = 0;
-        flags = Flags();
-        heap_top = 0;
-    }
-
-    void loadProgram(const uint8_t* code, size_t size) {
-        program = code;
-        programSize = size;
-        pc = 0;
-        running = true;
-        Serial.println("Program Loaded.");
-    }
-
-    // call builtin TRAP handler (args are in registers, return in R0 if any)
-    void call_trap(uint8_t id) {
-        switch (id) {
-            case B_DIGITAL_READ: {
-                int pin = resolve_pin((int)registers[0]);
-                int v = digitalRead(pin);
-                registers[0] = v;
-                break;
-            }
-
-            case B_DIGITAL_WRITE: {
-                int pin = resolve_pin((int)registers[0]);
-                int val = (int)registers[1];
-                digitalWrite(pin, val ? HIGH : LOW);
-                break;
-            }
-
-            case B_ANALOG_READ: {
-                int pin = resolve_pin((int)registers[0]);
-                int v = analogRead(pin);
-                registers[0] = v;
-                break;
-            }
-
-            case B_PWM_WRITE: {
-                int pin = resolve_pin((int)registers[0]);
-                int pwm = (int)registers[1];
-                pwm_write_pin(pin, pwm);
-                break;
-            }
-
-            case B_PIN_MODE: {
-                int pin = resolve_pin((int)registers[0]);
-                int mode = (int)registers[1]; // 0=input, 1=output (definir convención)
-                pinMode(pin, mode ? OUTPUT : INPUT);
-                break;
-            }
-
-            // --- Movement builtins ---
-            case B_FORWARD: {
-                int ms = (int)registers[0];
-                forward_ms(ms);
-                break;
-            }
-
-            case B_BACK: {
-                int ms = (int)registers[0];
-                back_ms(ms);
-                break;
-            }
-
-            case B_TURN_LEFT: {
-                int ms = (int)registers[0];
-                turnLeft_ms(ms);
-                break;
-            }
-
-            case B_TURN_RIGHT: {
-                int ms = (int)registers[0];
-                turnRight_ms(ms);
-                break;
-            }
-
-            case B_SET_SPEED: {
-                int s = (int)registers[0];
-                set_speed(s);
-                break;
-            }
-
-            case B_STOP: {
-                stopMotors();
-                break;
-            }
-
-            // --- IR sensor builtins ---
-            case B_READ_IR_LEFT: {
-                lecturaSensorIzq = analogRead(sensorIzqPin);
-                registers[0] = lecturaSensorIzq;
-                break;
-            }
-
-            case B_READ_IR_RIGHT: {
-                lecturaSensorDer = analogRead(sensorDerPin);
-                registers[0] = lecturaSensorDer;
-                break;
-            }
-
-            default:
-                Serial.print("Unknown TRAP id: "); Serial.println(id);
-                break;
-        }
-    }
-
-    void step() {
-        if (!running || pc >= programSize) {
-            running = false;
-            return;
-        }
-
-        // Fetch basic 3-byte instruction (some ops will consume extra bytes)
-        if (pc + 3 > programSize) {
-            Serial.println("Error: Unexpected end of program");
-            running = false;
-            return;
-        }
-
-        uint8_t op = program[pc];
-        uint8_t arg1 = program[pc + 1];
-        uint8_t arg2 = program[pc + 2];
-        pc += 3;
-
-        int32_t tmp;
-        switch (op) {
-            // --- Arithmetic & Logic ---
-            case NOP:
-                break;
-
-            case ADD:
-                // R0 = ARG1 + ARG2 (ARGs are register indices)
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] + registers[arg2];
-                }
-                break;
-
-            case SUB:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] - registers[arg2];
-                }
-                break;
-
-            case MUL:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] * registers[arg2];
-                }
-                break;
-
-            case DIV:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    if (registers[arg2] != 0)
-                        registers[0] = registers[arg1] / registers[arg2];
-                    else
-                        registers[0] = 0; // div by zero rule
-                }
-                break;
-
-            case MOD:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    if (registers[arg2] != 0)
-                        registers[0] = registers[arg1] % registers[arg2];
-                    else
-                        registers[0] = 0;
-                }
-                break;
-
-            case AND:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] & registers[arg2];
-                }
-                break;
-
-            case OR:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] | registers[arg2];
-                }
-                break;
-
-            case XOR:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] ^ registers[arg2];
-                }
-                break;
-
-            case NOT:
-                if (arg1 < NUM_REGISTERS) {
-                    registers[0] = ~registers[arg1];
-                }
-                break;
-
-            case CMP:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    int32_t a = registers[arg1];
-                    int32_t b = registers[arg2];
-                    flags.zero = (a == b);
-                    flags.lt   = (a < b);
-                    flags.gt   = (a > b);
-                    flags.le   = (a <= b);
-                    flags.ge   = (a >= b);
-                }
-                break;
-
-            case SHL:
-                // ARG2 treated as immediate (shift amount)
-                if (arg1 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] << (arg2 & 31);
-                }
-                break;
-
-            case SHR:
-                if (arg1 < NUM_REGISTERS) {
-                    registers[0] = registers[arg1] >> (arg2 & 31);
-                }
-                break;
-
-            // --- Memory Access ---
-            case LOAD:
-                // LOAD R,R -> R[ARG1] = R[ARG2]
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    registers[arg1] = registers[arg2];
-                }
-                break;
-
-            case LOADI:
-                // LOADI R,I -> R[ARG1] = ARG2 (8-bit immediate)
-                if (arg1 < NUM_REGISTERS) {
-                    registers[arg1] = (int32_t)arg2;
-                }
-                break;
-
-            case LOADI16:
-                // LOADI16 R, NEXT_WORD (consume next two bytes little-endian)
-                if (arg1 < NUM_REGISTERS) {
-                    if (pc + 2 <= programSize) {
-                        uint16_t word = program[pc] | (program[pc+1] << 8);
-                        pc += 2;
-                        registers[arg1] = (int32_t)word;
-                    } else {
-                        Serial.println("Error: LOADI16 requires 2 more bytes");
-                        running = false;
-                    }
-                }
-                break;
-
-            case STORE:
-                // STORE R,R -> M[R[ARG1]] = R[ARG2]
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    int idx = registers[arg1];
-                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
-                        heap[idx] = (uint8_t)registers[arg2];
-                    }
-                }
-                break;
-
-            case LOAD_ADDR:
-                // LOAD_ADDR R,I -> R[ARG1] = heap_base + ARG2
-                if (arg1 < NUM_REGISTERS) {
-                    registers[arg1] = (int32_t)(heap_top + arg2);
-                }
-                break;
-
-            case PUSH:
-                if (arg1 < NUM_REGISTERS) {
-                    if (sp < VM_STACK_SIZE) {
-                        stack[sp++] = registers[arg1];
-                    } else {
-                        Serial.println("Error: Stack Overflow");
-                        running = false;
-                    }
-                }
-                break;
-
-            case POP:
-                if (arg1 < NUM_REGISTERS) {
-                    if (sp > 0) {
-                        registers[arg1] = stack[--sp];
-                    } else {
-                        Serial.println("Error: Stack Underflow");
-                        running = false;
-                    }
-                }
-                break;
-
-            case PEEK:
-                // PEEK R,I -> R[ARG1] = STACK[SP+ARG2]
-                if (arg1 < NUM_REGISTERS) {
-                    uint16_t idx = sp + arg2;
-                    if (idx < VM_STACK_SIZE) {
-                        registers[arg1] = stack[idx];
-                    } else {
-                        Serial.println("Error: PEEK out of bounds");
-                        running = false;
-                    }
-                }
-                break;
-
-            case LOADM:
-                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
-                    int idx = registers[arg2];
-                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
-                        registers[arg1] = heap[idx];
-                    } else {
-                        Serial.println("Error: LOADM out of bounds");
-                        running = false;
-                    }
-                }
-                break;
-
-            // --- Control Flow ---
-            case JMP:
-                // PC = ARG1 | (ARG2 << 8)
-                pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                break;
-
-            case JZ:
-                if (flags.zero) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case JNZ:
-                if (!flags.zero) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case JLT:
-                if (flags.lt) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case JGT:
-                if (flags.gt) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case JLE:
-                if (flags.le) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case JGE:
-                if (flags.ge) {
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                }
-                break;
-
-            case CALL:
-                // push return address (pc) as 16-bit (we'll store two stack slots: low then high)
-                if (sp + 2 < VM_STACK_SIZE) {
-                    uint16_t ret = pc;
-                    // store low/high as two stack slots for simplicity
-                    stack[sp++] = ret & 0xFFFF;
-                    stack[sp++] = (ret >> 16); // will be zero for our sizes, but keep slot usage consistent
-                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
-                } else {
-                    Serial.println("Error: Stack overflow on CALL");
-                    running = false;
-                }
-                break;
-
-            case RET:
-                // pop return address
-                if (sp >= 2) {
-                    sp -= 2;
-                    uint32_t low = (uint32_t)stack[sp];
-                    uint32_t high = (uint32_t)stack[sp+1];
-                    uint32_t ret = (high << 16) | (low & 0xFFFF);
-                    pc = (uint16_t)ret;
-                } else {
-                    Serial.println("Error: RET with empty stack");
-                    running = false;
-                }
-                break;
-
-            case HALT:
-                running = false;
-                Serial.println("HALT encountered.");
-                break;
-
-            // PRINT (special kept): print numeric register value
-            case PRINT:
-                if (arg1 < NUM_REGISTERS) {
-                    Serial.println(registers[arg1]);
-                }
-                break;
-
-            // TRAP: call builtin handler; arg1 = builtin id
-            case TRAP:
-                call_trap(arg1);
-                break;
-
-            default:
-                Serial.print("Unknown Opcode: ");
-                Serial.println(op, HEX);
-                running = false;
-                break;
-        }
-    }
-
-    void run() {
-        while (running) {
-            step();
-        }
-    }
-
-    void dumpRegisters() {
-        Serial.println("--- Registers ---");
-        for (int i = 0; i < NUM_REGISTERS; i++) {
-            Serial.print("R"); Serial.print(i); Serial.print(": ");
-            Serial.println(registers[i]);
-        }
-        Serial.println("-----------------");
-    }
-};
-
-TinyVM vm;
 
 // =========================
 // === FUNCTION IMPLEMENTATIONS ===
@@ -636,15 +100,9 @@ TinyVM vm;
 #ifndef UNIT_TESTING
 
 void pwm_write_pin(int pin, int pwmValue) {
-    // Mapeo de pines PWM para ESP32
-    // En Arduino usarías analogWrite, en ESP32 usamos ledcWrite
-    // Para simplicidad, vamos a usar analogWrite que debería funcionar
     analogWrite(pin, pwmValue);
 }
 
-// Función única para controlar dirección y velocidad
-// side: 0=Izquierda, 1=Derecha
-// pwr:  -100 (atrás) a 100 (adelante)
 void setMotor(int side, int pwr) {
     pwr = constrain(pwr, -100, 100);
     int pin1 = (side == 0) ? L_IN1 : R_IN3;
@@ -701,43 +159,32 @@ void set_speed(int s) {
 }
 
 void initSensors() {
-    // Set motor control pins as outputs
     pinMode(L_IN1, OUTPUT); pinMode(L_IN2, OUTPUT); pinMode(L_ENA, OUTPUT);
     pinMode(R_IN3, OUTPUT); pinMode(R_IN4, OUTPUT); pinMode(R_ENB, OUTPUT);
-    
-    // Set ADC pins as input
     pinMode(sensorIzqPin, INPUT);
     pinMode(sensorDerPin, INPUT);
 }
 
 bool initializeSD() {
     Serial.println("\n--- INICIALIZANDO SD CARD ---");
-    
-    // Inicializar SPI explícitamente en pines estándar
     SPI.begin(18, 19, 23, 5);
-    
-    // Intentar iniciar SD
     if (!SD.begin(CS_PIN)) {
         Serial.println("FALLO: No se detecta la tarjeta.");
         return false;
     }
-    
     Serial.println("ÉXITO: Tarjeta SD detectada.");
     return true;
 }
 
-// Map instruction names to opcodes - matches the opcodes in this VM
 struct OpcodeMapping {
     const char* name;
     uint8_t opcode;
 };
 
 const OpcodeMapping opcodeMap[] = {
-    {"NOP", 0x00},
-    {"ADD", 0x01}, {"SUB", 0x02}, {"MUL", 0x03}, {"DIV", 0x04}, {"MOD", 0x05},
+    {"NOP", 0x00}, {"ADD", 0x01}, {"SUB", 0x02}, {"MUL", 0x03}, {"DIV", 0x04}, {"MOD", 0x05},
     {"AND", 0x06}, {"OR", 0x07}, {"XOR", 0x08}, {"NOT", 0x09}, {"CMP", 0x0A},
-    {"SHL", 0x0B}, {"SHR", 0x0C},
-    {"LOAD", 0x10}, {"LOADI", 0x11}, {"LOADI16", 0x12}, {"STORE", 0x13},
+    {"SHL", 0x0B}, {"SHR", 0x0C}, {"LOAD", 0x10}, {"LOADI", 0x11}, {"LOADI16", 0x12}, {"STORE", 0x13},
     {"LOAD_ADDR", 0x14}, {"PUSH", 0x15}, {"POP", 0x16}, {"PEEK", 0x17}, {"LOADM", 0x18},
     {"JMP", 0x20}, {"JZ", 0x21}, {"JNZ", 0x22}, {"JLT", 0x23}, {"JGT", 0x24},
     {"JLE", 0x25}, {"JGE", 0x26}, {"CALL", 0x27}, {"RET", 0x28}, {"HALT", 0x29},
@@ -752,7 +199,7 @@ uint8_t findOpcode(const char* name) {
             return opcodeMap[i].opcode;
         }
     }
-    return 0xFF; // Invalid opcode
+    return 0xFF;
 }
 
 bool loadProgramFromSD() {
@@ -772,7 +219,6 @@ bool loadProgramFromSD() {
     int lineNum = 0;
     
     while (file.available() && programSize < sizeof(programBuffer) - 3) {
-        // Leer línea
         int pos = 0;
         while (file.available() && pos < sizeof(line) - 1) {
             char c = file.read();
@@ -782,10 +228,8 @@ bool loadProgramFromSD() {
         line[pos] = '\0';
         lineNum++;
         
-        // Skip empty lines and comments
         if (pos == 0 || line[0] == '#') continue;
         
-        // Parse instruction: OPCODE ARG1 ARG2
         char opcode_str[16];
         int arg1, arg2;
         
@@ -813,6 +257,380 @@ bool loadProgramFromSD() {
     return programSize > 0;
 }
 
+#endif
+
+// =========================
+// === VM CLASS ===
+// =========================
+
+class TinyVM {
+public:
+    int32_t registers[NUM_REGISTERS];
+    int32_t stack[VM_STACK_SIZE];
+    uint8_t heap[VM_HEAP_SIZE];
+    uint16_t sp, pc;
+    bool running;
+    const uint8_t* program;
+    size_t programSize;
+    Flags flags;
+    size_t heap_top;
+
+    TinyVM() { reset(); }
+
+    void reset() {
+        for(int i=0; i<NUM_REGISTERS; i++) registers[i] = 0;
+        for(int i=0; i<VM_STACK_SIZE; i++) stack[i] = 0;
+        for(int i=0; i<VM_HEAP_SIZE; i++) heap[i] = 0;
+        sp = 0; pc = 0; running = false; program = nullptr; programSize = 0;
+        flags = Flags(); heap_top = 0;
+    }
+
+    void loadProgram(const uint8_t* code, size_t size) {
+        program = code; programSize = size; pc = 0; running = true;
+        Serial.println("Program Loaded.");
+    }
+
+    void call_trap(uint8_t id) {
+        switch (id) {
+            case B_DIGITAL_READ: {
+                int pin = resolve_pin((int)registers[0]);
+                registers[0] = digitalRead(pin);
+                break;
+            }
+            case B_DIGITAL_WRITE: {
+                int pin = resolve_pin((int)registers[0]);
+                int val = (int)registers[1];
+                digitalWrite(pin, val ? HIGH : LOW);
+                break;
+            }
+            case B_ANALOG_READ: {
+                int pin = resolve_pin((int)registers[0]);
+                registers[0] = analogRead(pin);
+                break;
+            }
+            case B_PWM_WRITE: {
+                int pin = resolve_pin((int)registers[0]);
+                int pwm = (int)registers[1];
+                pwm_write_pin(pin, pwm);
+                break;
+            }
+            case B_PIN_MODE: {
+                int pin = resolve_pin((int)registers[0]);
+                int mode = (int)registers[1];
+                pinMode(pin, mode ? OUTPUT : INPUT);
+                break;
+            }
+            case B_FORWARD: {
+                int ms = (int)registers[0];
+                forward_ms(ms);
+                break;
+            }
+            case B_BACK: {
+                int ms = (int)registers[0];
+                back_ms(ms);
+                break;
+            }
+            case B_TURN_LEFT: {
+                int ms = (int)registers[0];
+                turnLeft_ms(ms);
+                break;
+            }
+            case B_TURN_RIGHT: {
+                int ms = (int)registers[0];
+                turnRight_ms(ms);
+                break;
+            }
+            case B_SET_SPEED: {
+                int s = (int)registers[0];
+                set_speed(s);
+                break;
+            }
+            case B_STOP: {
+                stopMotors();
+                break;
+            }
+            case B_READ_IR_LEFT: {
+                lecturaSensorIzq = analogRead(sensorIzqPin);
+                registers[0] = lecturaSensorIzq;
+                break;
+            }
+            case B_READ_IR_RIGHT: {
+                lecturaSensorDer = analogRead(sensorDerPin);
+                registers[0] = lecturaSensorDer;
+                break;
+            }
+            default:
+                Serial.print("Unknown TRAP id: "); Serial.println(id);
+                break;
+        }
+    }
+
+    void step() {
+        if (!running || pc >= programSize) {
+            running = false;
+            return;
+        }
+
+        if (pc + 3 > programSize) {
+            Serial.println("Error: Unexpected end of program");
+            running = false;
+            return;
+        }
+
+        uint8_t op = program[pc];
+        uint8_t arg1 = program[pc + 1];
+        uint8_t arg2 = program[pc + 2];
+        pc += 3;
+
+        switch (op) {
+            case NOP: break;
+            case ADD:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] + registers[arg2];
+                }
+                break;
+            case SUB:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] - registers[arg2];
+                }
+                break;
+            case MUL:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] * registers[arg2];
+                }
+                break;
+            case DIV:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    if (registers[arg2] != 0)
+                        registers[0] = registers[arg1] / registers[arg2];
+                    else
+                        registers[0] = 0;
+                }
+                break;
+            case MOD:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    if (registers[arg2] != 0)
+                        registers[0] = registers[arg1] % registers[arg2];
+                    else
+                        registers[0] = 0;
+                }
+                break;
+            case AND:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] & registers[arg2];
+                }
+                break;
+            case OR:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] | registers[arg2];
+                }
+                break;
+            case XOR:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] ^ registers[arg2];
+                }
+                break;
+            case NOT:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = ~registers[arg1];
+                }
+                break;
+            case CMP:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int32_t a = registers[arg1];
+                    int32_t b = registers[arg2];
+                    flags.zero = (a == b);
+                    flags.lt   = (a < b);
+                    flags.gt   = (a > b);
+                    flags.le   = (a <= b);
+                    flags.ge   = (a >= b);
+                }
+                break;
+            case SHL:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] << (arg2 & 31);
+                }
+                break;
+            case SHR:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[0] = registers[arg1] >> (arg2 & 31);
+                }
+                break;
+            case LOAD:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    registers[arg1] = registers[arg2];
+                }
+                break;
+            case LOADI:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[arg1] = (int32_t)arg2;
+                }
+                break;
+            case LOADI16:
+                if (arg1 < NUM_REGISTERS) {
+                    if (pc + 2 <= programSize) {
+                        uint16_t word = program[pc] | (program[pc+1] << 8);
+                        pc += 2;
+                        registers[arg1] = (int32_t)word;
+                    } else {
+                        Serial.println("Error: LOADI16 requires 2 more bytes");
+                        running = false;
+                    }
+                }
+                break;
+            case STORE:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int idx = registers[arg1];
+                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
+                        heap[idx] = (uint8_t)registers[arg2];
+                    }
+                }
+                break;
+            case LOAD_ADDR:
+                if (arg1 < NUM_REGISTERS) {
+                    registers[arg1] = (int32_t)(heap_top + arg2);
+                }
+                break;
+            case PUSH:
+                if (arg1 < NUM_REGISTERS) {
+                    if (sp < VM_STACK_SIZE) {
+                        stack[sp++] = registers[arg1];
+                    } else {
+                        Serial.println("Error: Stack Overflow");
+                        running = false;
+                    }
+                }
+                break;
+            case POP:
+                if (arg1 < NUM_REGISTERS) {
+                    if (sp > 0) {
+                        registers[arg1] = stack[--sp];
+                    } else {
+                        Serial.println("Error: Stack Underflow");
+                        running = false;
+                    }
+                }
+                break;
+            case PEEK:
+                if (arg1 < NUM_REGISTERS) {
+                    uint16_t idx = sp + arg2;
+                    if (idx < VM_STACK_SIZE) {
+                        registers[arg1] = stack[idx];
+                    } else {
+                        Serial.println("Error: PEEK out of bounds");
+                        running = false;
+                    }
+                }
+                break;
+            case LOADM:
+                if (arg1 < NUM_REGISTERS && arg2 < NUM_REGISTERS) {
+                    int idx = registers[arg2];
+                    if (idx >= 0 && idx < (int)VM_HEAP_SIZE) {
+                        registers[arg1] = heap[idx];
+                    } else {
+                        Serial.println("Error: LOADM out of bounds");
+                        running = false;
+                    }
+                }
+                break;
+            case JMP:
+                pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                break;
+            case JZ:
+                if (flags.zero) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case JNZ:
+                if (!flags.zero) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case JLT:
+                if (flags.lt) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case JGT:
+                if (flags.gt) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case JLE:
+                if (flags.le) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case JGE:
+                if (flags.ge) {
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                }
+                break;
+            case CALL:
+                if (sp + 2 < VM_STACK_SIZE) {
+                    uint16_t ret = pc;
+                    stack[sp++] = ret & 0xFFFF;
+                    stack[sp++] = (ret >> 16);
+                    pc = ((uint16_t)arg1) | ((uint16_t)arg2 << 8);
+                } else {
+                    Serial.println("Error: Stack overflow on CALL");
+                    running = false;
+                }
+                break;
+            case RET:
+                if (sp >= 2) {
+                    sp -= 2;
+                    uint32_t low = (uint32_t)stack[sp];
+                    uint32_t high = (uint32_t)stack[sp+1];
+                    uint32_t ret = (high << 16) | (low & 0xFFFF);
+                    pc = (uint16_t)ret;
+                } else {
+                    Serial.println("Error: RET with empty stack");
+                    running = false;
+                }
+                break;
+            case HALT:
+                running = false;
+                Serial.println("HALT encountered.");
+                break;
+            case PRINT:
+                if (arg1 < NUM_REGISTERS) {
+                    Serial.println(registers[arg1]);
+                }
+                break;
+            case TRAP:
+                call_trap(arg1);
+                break;
+            default:
+                Serial.print("Unknown Opcode: ");
+                Serial.println(op, HEX);
+                running = false;
+                break;
+        }
+    }
+
+    void run() {
+        while (running) {
+            step();
+        }
+    }
+
+    void dumpRegisters() {
+        Serial.println("--- Registers ---");
+        for (int i = 0; i < NUM_REGISTERS; i++) {
+            Serial.print("R"); Serial.print(i); Serial.print(": ");
+            Serial.println(registers[i]);
+        }
+        Serial.println("-----------------");
+    }
+};
+
+TinyVM vm;
+
+// =========================
+// === ARDUINO SETUP/LOOP ===
+// =========================
+
 void setup() {
     Serial.begin(115200);
     while(!Serial) delay(10);
@@ -822,17 +640,14 @@ void setup() {
     Serial.println("    TeoCompis VM - Cargador desde SD");
     Serial.println("==============================================");
 
-    // Inicializar sensores y motores
     initSensors();
 
-    // Inicializar SD card
     if (!initializeSD()) {
         Serial.println("ERROR CRÍTICO: No se puede inicializar SD");
         Serial.println("Sistema detenido.");
         return;
     }
     
-    // Cargar programa desde SD
     if (!loadProgramFromSD()) {
         Serial.println("ERROR CRÍTICO: No se puede cargar el programa desde SD");
         Serial.println("Sistema detenido.");
@@ -848,108 +663,5 @@ void setup() {
 }
 
 void loop() {
-    // Nothing to do here
     delay(1000);
 }
-
-#endif
-
-// --- Helper Functions ---
-#ifndef UNIT_TESTING
-void pwm_write_pin(int pin, int pwmValue) {
-    // Mapeo de pines PWM para ESP32
-    // En Arduino usarías analogWrite, en ESP32 usamos ledcWrite
-    // Para simplicidad, vamos a usar analogWrite que debería funcionar
-    analogWrite(pin, pwmValue);
-}
-
-// --- Motor pin declarations and movement API ---
-// Motor Izquierdo
-const int L_IN1 = 26;
-const int L_IN2 = 27;
-const int L_ENA = 25;
-
-// Motor Derecho
-const int R_IN3 = 33;
-const int R_IN4 = 32;
-const int R_ENB = 14;
-
-// Configuración Global
-const int SAFETY_DELAY = 500; // ms
-int speed_global = 75;       // Velocidad global (0-100)
-
-// Función única para controlar dirección y velocidad
-// side: 0=Izquierda, 1=Derecha
-// pwr:  -100 (atrás) a 100 (adelante)
-void setMotor(int side, int pwr) {
-    pwr = constrain(pwr, -100, 100);
-    int pin1 = (side == 0) ? L_IN1 : R_IN3;
-    int pin2 = (side == 0) ? L_IN2 : R_IN4;
-    int pinPWM = (side == 0) ? L_ENA : R_ENB;
-
-    if (pwr > 0) {
-        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
-    } else if (pwr < 0) {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
-    } else {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
-    }
-
-    int pwmValue = abs(pwr) * 255 / 100;
-    analogWrite(pinPWM, pwmValue);
-}
-
-void stopMotors() {
-    setMotor(0, 0);
-    setMotor(1, 0);
-}
-
-void forward_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void back_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnLeft_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnRight_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void set_speed(int s) {
-    speed_global = constrain(s, 0, 100);
-}
-
-// --- IR Sensors configuration ---
-// Note: in your comment the left/right pins were swapped; follow given values
-const int sensorIzqPin = 34; // ADC1_CH6
-const int sensorDerPin = 35; // ADC1_CH7
-
-int lecturaSensorIzq = 0;
-int lecturaSensorDer = 0;
-int umbralIzq = 1500;
-int umbralDer = 1500;
-
-// Helper to initialize sensor pins and ADC channels
-void initSensors() {
-    // Set motor control pins as outputs already set elsewhere; set ADC pins as input
-    pinMode(sensorIzqPin, INPUT);
-    pinMode(sensorDerPin, INPUT);
-}
-#endif
