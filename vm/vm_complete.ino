@@ -111,24 +111,25 @@ void setMotor(int side, int pwr) {
     int pin2 = (side == 0) ? L_IN2 : R_IN4;
     int pinPWM = (side == 0) ? L_ENA : R_ENB;
 
-    int pwmValue = abs(pwr) * 255 / 100;
-
     if (pwr > 0) {
         // Hacia adelante
         digitalWrite(pin1, HIGH);
         digitalWrite(pin2, LOW);
+        int pwmValue = abs(pwr) * 255 / 100;
+        analogWrite(pinPWM, pwmValue);
     } else if (pwr < 0) {
         // Hacia atrás
         digitalWrite(pin1, LOW);
         digitalWrite(pin2, HIGH);
+        int pwmValue = abs(pwr) * 255 / 100;
+        analogWrite(pinPWM, pwmValue);
     } else {
         // Detener
         digitalWrite(pin1, LOW);
         digitalWrite(pin2, LOW);
-        pwmValue = 0;
+        analogWrite(L_ENA, 255);
+        analogWrite(R_ENB, 255);
     }
-    
-    analogWrite(pinPWM, pwmValue);
 }
 
 void stopMotors() {
@@ -139,37 +140,21 @@ void stopMotors() {
 void forward_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, speed_global);
-    if (ms > 0) {
-        delay(ms);
-        stopMotors();
-    }
 }
 
 void back_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, -speed_global);
-    if (ms > 0) {
-        delay(ms);
-        stopMotors();
-    }
 }
 
 void turnLeft_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, speed_global);
-    if (ms > 0) {
-        delay(ms);
-        stopMotors();
-    }
 }
 
 void turnRight_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, -speed_global);
-    if (ms > 0) {
-        delay(ms);
-        stopMotors();
-    }
 }
 
 void set_speed(int s) {
@@ -296,7 +281,7 @@ public:
             }
             case B_READ_IR_RIGHT: {
                 lecturaSensorDer = analogRead(sensorDerPin);
-                bool result = lecturaSensorDer < 1500 ? 1 : 0;
+                bool result = lecturaSensorDer < 800 ? 1 : 0;
                 Serial.print("Right IR Sensor: "); Serial.println(lecturaSensorDer);
                 registers[0] = result;
                 break;
