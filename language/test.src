@@ -1,19 +1,20 @@
 void proc loop() start
   int izquierda = exec readLeftSensor();
   int derecha = exec readRightSensor();
-  
-  if (izquierda == 1 and derecha == 1) start
-    exec forward_ms();
+  exec print(izquierda);
+  exec print(derecha);
+  if (izquierda == 0 and derecha == 0) start
+    exec forward_ms(0);
   end
   else
   start
     if (izquierda == 0 and derecha == 1) start
-      exec turnRight_ms();
+      exec turnRight_ms(0);
     end
     else
     start
       if (izquierda == 1 and derecha == 0) start
-        exec forward_ms();
+        exec turnLeft_ms(0);
       end
     end
   end
