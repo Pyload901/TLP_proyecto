@@ -286,9 +286,6 @@ public:
     size_t programSize;
     Flags flags;
     size_t heap_top;
-    
-    // Address of the user's loop function (if any)
-    int loop_start_pc = -1;
 
     TinyVM() { reset(); }
 
@@ -298,13 +295,6 @@ public:
         for(int i=0; i<VM_HEAP_SIZE; i++) heap[i] = 0;
         sp = 0; pc = 0; running = false; program = nullptr; programSize = 0;
         flags = Flags(); heap_top = 0;
-        loop_start_pc = -1;
-    }
-
-    void setLoopStart(int addr) {
-        loop_start_pc = addr;
-        Serial.print("Loop start set to: ");
-        Serial.println(addr);
     }
 
     void loadProgram(const uint8_t* code, size_t size) {
@@ -705,10 +695,10 @@ void setup() {
 }
 
 void loop() {
-    //   // delay(1); 
+    // Run the user's loop function if defined
+    vm.runLoop();
+    
+    // Optional: small delay to prevent CPU hogging if loop is empty
+    // delay(1); 
 }
-#endif
 
-void loop() {
-    delay(1000);
-}
