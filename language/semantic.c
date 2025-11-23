@@ -5,16 +5,15 @@
 #include "ast.h"
 #include "semantic.h"
 static char* builtin_functions[] = {
-    "abs",
-    "sqrt",
-    "pow",
+    "digitalRead",
+    "digitalWrite",
     "print",
-    "stopMotors",
     "forward_ms",
     "back_ms",
     "turnLeft_ms",
     "turnRight_ms",
-    "set_speed"
+    "readLeftSensor",
+    "readRightSensor",
 };
 static char* builtin_constants[] = {
     "INPUT",

@@ -1,13 +1,7 @@
-int proc suma(int a, int b) start
-  return a + b;
-end
-int proc resta(int a, int b) start
-  return a + b;
-end
-int proc mul(int a, int b) start
-  return a + b;
-end
 start
-  int x = exec suma(1, 2);
-  exec print(x);
+  while (true) start
+    exec print(99);
+    exec forward_ms(0);
+
+  end 
 end
