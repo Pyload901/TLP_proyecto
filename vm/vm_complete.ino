@@ -79,7 +79,7 @@ const int R_IN3 = 33;
 const int R_IN4 = 32;
 const int R_ENB = 14;
 const int SAFETY_DELAY = 500;
-int speed_global = 75;
+int speed_global = 250;
 
 // --- IR Sensors configuration ---
 const int sensorIzqPin = 34;
@@ -129,33 +129,25 @@ void stopMotors() {
 void forward_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
 }
 
 void back_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
 }
 
 void turnLeft_ms(int ms) {
     setMotor(0, -speed_global);
     setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
 }
 
 void turnRight_ms(int ms) {
     setMotor(0, speed_global);
     setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
 }
 
 void set_speed(int s) {
-    speed_global = constrain(s, 0, 100);
+    speed_global = constrain(s, 0, 255);
 }
 
 void initSensors() {
