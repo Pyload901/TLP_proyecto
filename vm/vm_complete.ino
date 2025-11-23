@@ -97,180 +97,6 @@ size_t programSize = 0;
 // === FUNCTION IMPLEMENTATIONS ===
 // =========================
 
-#ifndef UNIT_TESTING
-
-void pwm_write_pin(int pin, int pwmValue) {
-    analogWrite(pin, pwmValue);
-}
-
-void setMotor(int side, int pwr) {
-    pwr = constrain(pwr, -100, 100);
-    int pin1 = (side == 0) ? L_IN1 : R_IN3;
-    int pin2 = (side == 0) ? L_IN2 : R_IN4;
-    int pinPWM = (side == 0) ? L_ENA : R_ENB;
-
-    if (pwr > 0) {
-        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
-    } else if (pwr < 0) {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
-    } else {
-        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
-    }
-
-    int pwmValue = abs(pwr) * 255 / 100;
-    analogWrite(pinPWM, pwmValue);
-}
-
-void stopMotors() {
-    setMotor(0, 0);
-    setMotor(1, 0);
-}
-
-void forward_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void back_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnLeft_ms(int ms) {
-    setMotor(0, -speed_global);
-    setMotor(1, speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void turnRight_ms(int ms) {
-    setMotor(0, speed_global);
-    setMotor(1, -speed_global);
-    delay(ms);
-    stopMotors();
-}
-
-void set_speed(int s) {
-    speed_global = constrain(s, 0, 100);
-}
-
-void initSensors() {
-    // Set motor control pins as outputs
-    pinMode(L_IN1, OUTPUT);
-    pinMode(L_IN2, OUTPUT);
-    pinMode(R_IN3, OUTPUT);
-    pinMode(R_IN4, OUTPUT);
-    
-    // Set ADC pins as input
-    pinMode(sensorIzqPin, INPUT);
-    pinMode(sensorDerPin, INPUT);
-    
-    // Setup PWM channels for ESP32 if needed (using ledc)
-
-bool initializeSD() {
-    Serial.println("\n--- INICIALIZANDO SD CARD ---");
-    SPI.begin(18, 19, 23, 5);
-    if (!SD.begin(CS_PIN)) {
-        Serial.println("FALLO: No se detecta la tarjeta.");
-        return false;
-    }
-    Serial.println("ÉXITO: Tarjeta SD detectada.");
-    return true;
-}
-
-struct OpcodeMapping {
-    const char* name;
-    uint8_t opcode;
-};
-
-const OpcodeMapping opcodeMap[] = {
-    {"NOP", 0x00}, {"ADD", 0x01}, {"SUB", 0x02}, {"MUL", 0x03}, {"DIV", 0x04}, {"MOD", 0x05},
-    {"AND", 0x06}, {"OR", 0x07}, {"XOR", 0x08}, {"NOT", 0x09}, {"CMP", 0x0A},
-    {"SHL", 0x0B}, {"SHR", 0x0C}, {"LOAD", 0x10}, {"LOADI", 0x11}, {"LOADI16", 0x12}, {"STORE", 0x13},
-    {"LOAD_ADDR", 0x14}, {"PUSH", 0x15}, {"POP", 0x16}, {"PEEK", 0x17}, {"LOADM", 0x18},
-    {"JMP", 0x20}, {"JZ", 0x21}, {"JNZ", 0x22}, {"JLT", 0x23}, {"JGT", 0x24},
-    {"JLE", 0x25}, {"JGE", 0x26}, {"CALL", 0x27}, {"RET", 0x28}, {"HALT", 0x29},
-    {"PRINT", 0x30}, {"TRAP", 0x31}
-};
-
-const int OPCODE_COUNT = sizeof(opcodeMap) / sizeof(OpcodeMapping);
-
-uint8_t findOpcode(const char* name) {
-    for (int i = 0; i < OPCODE_COUNT; i++) {
-        if (strcmp(opcodeMap[i].name, name) == 0) {
-            return opcodeMap[i].opcode;
-        }
-    }
-    return 0xFF;
-}
-
-bool loadProgramFromSD() {
-    Serial.println("--- CARGANDO PROGRAMA DESDE SD ---");
-    
-    File file = SD.open(VMCODE_FILE);
-    if (!file) {
-        Serial.print("ERROR: No se puede abrir el archivo ");
-        Serial.println(VMCODE_FILE);
-        return false;
-    }
-    
-    Serial.println("Archivo encontrado, parseando instrucciones...");
-    
-    programSize = 0;
-    char line[128];
-    int lineNum = 0;
-    
-    while (file.available() && programSize < sizeof(programBuffer) - 3) {
-        int pos = 0;
-        while (file.available() && pos < sizeof(line) - 1) {
-            char c = file.read();
-            if (c == '\n' || c == '\r') break;
-            line[pos++] = c;
-        }
-        line[pos] = '\0';
-        lineNum++;
-        
-        // Check for loop label marker (supports "# .loop" or "# FUNCTION loop")
-        if (strstr(line, "# .loop") != NULL || strstr(line, "# FUNCTION loop") != NULL) {
-            vm.setLoopStart(programSize);
-            continue;
-        }
-
-        if (pos == 0 || line[0] == '#') continue;
-        
-        char opcode_str[16];
-        int arg1, arg2;
-        
-        if (sscanf(line, "%s %d %d", opcode_str, &arg1, &arg2) == 3) {
-            uint8_t opcode = findOpcode(opcode_str);
-            if (opcode != 0xFF) {
-                programBuffer[programSize++] = opcode;
-                programBuffer[programSize++] = (uint8_t)arg1;
-                programBuffer[programSize++] = (uint8_t)arg2;
-            } else {
-                Serial.print("ADVERTENCIA: Opcode desconocido en línea ");
-                Serial.print(lineNum);
-                Serial.print(": ");
-                Serial.println(opcode_str);
-            }
-        }
-    }
-    
-    file.close();
-    
-    Serial.print("Programa cargado: ");
-    Serial.print(programSize);
-    Serial.println(" bytes");
-    
-    return programSize > 0;
-}
-
-#endif
-
 // =========================
 // === VM CLASS ===
 // =========================
@@ -653,6 +479,179 @@ public:
 };
 
 TinyVM vm;
+#ifndef UNIT_TESTING
+
+void pwm_write_pin(int pin, int pwmValue) {
+    analogWrite(pin, pwmValue);
+}
+
+void setMotor(int side, int pwr) {
+    pwr = constrain(pwr, -100, 100);
+    int pin1 = (side == 0) ? L_IN1 : R_IN3;
+    int pin2 = (side == 0) ? L_IN2 : R_IN4;
+    int pinPWM = (side == 0) ? L_ENA : R_ENB;
+
+    if (pwr > 0) {
+        digitalWrite(pin1, HIGH); digitalWrite(pin2, LOW);
+    } else if (pwr < 0) {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, HIGH);
+    } else {
+        digitalWrite(pin1, LOW); digitalWrite(pin2, LOW);
+    }
+
+    int pwmValue = abs(pwr) * 255 / 100;
+    analogWrite(pinPWM, pwmValue);
+}
+
+void stopMotors() {
+    setMotor(0, 0);
+    setMotor(1, 0);
+}
+
+void forward_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void back_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnLeft_ms(int ms) {
+    setMotor(0, -speed_global);
+    setMotor(1, speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void turnRight_ms(int ms) {
+    setMotor(0, speed_global);
+    setMotor(1, -speed_global);
+    delay(ms);
+    stopMotors();
+}
+
+void set_speed(int s) {
+    speed_global = constrain(s, 0, 100);
+}
+
+void initSensors() {
+    // Set motor control pins as outputs
+    pinMode(L_IN1, OUTPUT);
+    pinMode(L_IN2, OUTPUT);
+    pinMode(R_IN3, OUTPUT);
+    pinMode(R_IN4, OUTPUT);
+    
+    // Set ADC pins as input
+    pinMode(sensorIzqPin, INPUT);
+    pinMode(sensorDerPin, INPUT);
+    
+    // Setup PWM channels for ESP32 if needed (using ledc)
+}
+bool initializeSD() {
+    Serial.println("\n--- INICIALIZANDO SD CARD ---");
+    SPI.begin(18, 19, 23, 5);
+    if (!SD.begin(CS_PIN)) {
+        Serial.println("FALLO: No se detecta la tarjeta.");
+        return false;
+    }
+    Serial.println("ÉXITO: Tarjeta SD detectada.");
+    return true;
+}
+
+struct OpcodeMapping {
+    const char* name;
+    uint8_t opcode;
+};
+
+const OpcodeMapping opcodeMap[] = {
+    {"NOP", 0x00}, {"ADD", 0x01}, {"SUB", 0x02}, {"MUL", 0x03}, {"DIV", 0x04}, {"MOD", 0x05},
+    {"AND", 0x06}, {"OR", 0x07}, {"XOR", 0x08}, {"NOT", 0x09}, {"CMP", 0x0A},
+    {"SHL", 0x0B}, {"SHR", 0x0C}, {"LOAD", 0x10}, {"LOADI", 0x11}, {"LOADI16", 0x12}, {"STORE", 0x13},
+    {"LOAD_ADDR", 0x14}, {"PUSH", 0x15}, {"POP", 0x16}, {"PEEK", 0x17}, {"LOADM", 0x18},
+    {"JMP", 0x20}, {"JZ", 0x21}, {"JNZ", 0x22}, {"JLT", 0x23}, {"JGT", 0x24},
+    {"JLE", 0x25}, {"JGE", 0x26}, {"CALL", 0x27}, {"RET", 0x28}, {"HALT", 0x29},
+    {"PRINT", 0x30}, {"TRAP", 0x31}
+};
+
+const int OPCODE_COUNT = sizeof(opcodeMap) / sizeof(OpcodeMapping);
+
+uint8_t findOpcode(const char* name) {
+    for (int i = 0; i < OPCODE_COUNT; i++) {
+        if (strcmp(opcodeMap[i].name, name) == 0) {
+            return opcodeMap[i].opcode;
+        }
+    }
+    return 0xFF;
+}
+
+bool loadProgramFromSD() {
+    Serial.println("--- CARGANDO PROGRAMA DESDE SD ---");
+    
+    File file = SD.open(VMCODE_FILE);
+    if (!file) {
+        Serial.print("ERROR: No se puede abrir el archivo ");
+        Serial.println(VMCODE_FILE);
+        return false;
+    }
+    
+    Serial.println("Archivo encontrado, parseando instrucciones...");
+    
+    programSize = 0;
+    char line[128];
+    int lineNum = 0;
+    
+    while (file.available() && programSize < sizeof(programBuffer) - 3) {
+        int pos = 0;
+        while (file.available() && pos < sizeof(line) - 1) {
+            char c = file.read();
+            if (c == '\n' || c == '\r') break;
+            line[pos++] = c;
+        }
+        line[pos] = '\0';
+        lineNum++;
+        
+        // Check for loop label marker (supports "# .loop" or "# FUNCTION loop")
+        if (strstr(line, "# .loop") != NULL || strstr(line, "# FUNCTION loop") != NULL) {
+            vm.setLoopStart(programSize);
+            continue;
+        }
+
+        if (pos == 0 || line[0] == '#') continue;
+        
+        char opcode_str[16];
+        int arg1, arg2;
+        
+        if (sscanf(line, "%s %d %d", opcode_str, &arg1, &arg2) == 3) {
+            uint8_t opcode = findOpcode(opcode_str);
+            if (opcode != 0xFF) {
+                programBuffer[programSize++] = opcode;
+                programBuffer[programSize++] = (uint8_t)arg1;
+                programBuffer[programSize++] = (uint8_t)arg2;
+            } else {
+                Serial.print("ADVERTENCIA: Opcode desconocido en línea ");
+                Serial.print(lineNum);
+                Serial.print(": ");
+                Serial.println(opcode_str);
+            }
+        }
+    }
+    
+    file.close();
+    
+    Serial.print("Programa cargado: ");
+    Serial.print(programSize);
+    Serial.println(" bytes");
+    
+    return programSize > 0;
+}
+
+#endif
 
 // =========================
 // === ARDUINO SETUP/LOOP ===
