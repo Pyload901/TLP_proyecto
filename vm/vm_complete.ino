@@ -289,12 +289,14 @@ public:
             }
             case B_READ_IR_LEFT: {
                 lecturaSensorIzq = analogRead(sensorIzqPin);
-                registers[0] = lecturaSensorIzq;
+                bool result = lecturaSensorIzq < 1500 ? 1 : 0;
+                registers[0] = result;
                 break;
             }
             case B_READ_IR_RIGHT: {
                 lecturaSensorDer = analogRead(sensorDerPin);
-                registers[0] = lecturaSensorDer;
+                bool result = lecturaSensorDer < 1500 ? 1 : 0;
+                registers[0] = result;
                 break;
             }
             default:
