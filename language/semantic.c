@@ -71,7 +71,6 @@ void register_functions(Node* node) {
         if (strcmp(nodes[i]->node_type, "FUNCTION") == 0) {
             Node *func_node = (Node *)node->list->items[i];
             char *func_name = func_node->value;
-            printf("Registering function: %s\n", func_name);
             Type return_type = parse_type(func_node->left->value);
             if (sym_lookup_current(func_name)) {
                 fprintf(stderr, "Error: Function %s already declared in this scope.\n", func_name);
