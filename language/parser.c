@@ -5,12 +5,45 @@
 #include "parser.h"
 
 static int current_token;
-static void next() {current_token = yylex();};
-static void die(int token) {printf("Syntax error at token %d\n", token); exit(1);}
+static int current_line;
+static int current_column;
+
+static void next() {
+    current_line = yylloc.first_line;
+    current_column = yylloc.first_column;
+    current_token = yylex();
+}
+
+static const char* token_name(int token) {
+    switch(token) {
+        case ID: return "identifier";
+        case INTVAL: return "integer";
+        case DOUBLEVAL: return "float";
+        case TIPO: return "type";
+        case SEMICOLON: return "';'";
+        case LPAREN: return "'('";
+        case RPAREN: return "')'";
+        case LBRACKET: return "'['";
+        case RBRACKET: return "']'";
+        case ASSIGN: return "'='";
+        case START: return "'start'";
+        case END: return "'end'";
+        case COMMA: return "','";
+        default: return "unknown token";
+    }
+}
+
+static void die(int expected_token) {
+    fprintf(stderr, "Syntax error at line %d, column %d: expected %s\n", 
+            current_line, current_column, token_name(expected_token));
+    exit(1);
+}
+
 static bool accept(int token) {if (current_token == token) {next(); return true;} return false;}
 static void expect(int token) {if (!accept(token)) die(token);}
 
 yystype yylval;
+yyltype yylloc;
 
 Node* parse_block();
 Node* parse_instruction();

@@ -1,4 +1,4 @@
-%option noyywrap noinput nounput
+%option noyywrap noinput nounput yylineno
 %{
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +6,10 @@
 #include <stdbool.h>
 #include "tokens.h"
 extern yystype yylval;
+
+int yycolumn = 1;
+
+#define YY_USER_ACTION { \n    yylloc.first_line = yylineno; \n    yylloc.first_column = yycolumn; \n    yycolumn += yyleng; \n    yylloc.last_column = yycolumn; \n}
 %}
 
 %%
@@ -59,8 +63,9 @@ extern yystype yylval;
 \'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { yylval.cval = yytext[1]; return CARACTER; }
 
 
-"//".*    {  }
-[ \t\n]+               { /* Ignorar espacios en blanco */ }
+"/"".*    {  }
+\n  { yycolumn = 1; }
+[ \t]+               { /* Ignorar espacios en blanco */ }
 
 .   { return ERROR; }
 %%

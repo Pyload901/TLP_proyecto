@@ -57,6 +57,16 @@ typedef union {
   char *id;
 } yystype;
 
+typedef struct {
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+} yyltype;
+
 extern yystype yylval;
+extern yyltype yylloc;
+extern int yylineno;
+extern int yycolumn;
 int   yylex(void);
 extern FILE *yyin; 
