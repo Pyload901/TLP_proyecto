@@ -34,7 +34,7 @@ static const char* token_name(int token) {
 }
 
 static void die(int expected_token) {
-    fprintf(stderr, "Syntax error at line %d, column %d: expected %s\n", 
+    fprintf(stderr, "Syntax error at line %d, token %d: expected %s\n", 
             current_line, current_column, token_name(expected_token));
     exit(1);
 }

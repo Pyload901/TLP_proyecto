@@ -9,7 +9,7 @@ extern yystype yylval;
 
 int yycolumn = 1;
 
-#define YY_USER_ACTION { \n    yylloc.first_line = yylineno; \n    yylloc.first_column = yycolumn; \n    yycolumn += yyleng; \n    yylloc.last_column = yycolumn; \n}
+#define YY_USER_ACTION { yylloc.first_line = yylineno; yylloc.first_column = yycolumn; yycolumn += yyleng; yylloc.last_column = yycolumn;}
 %}
 
 %%
@@ -63,7 +63,7 @@ int yycolumn = 1;
 \'[A-Za-z0-9\-_=+\]\[.?~!@#$%^&*()<>]?\'   { yylval.cval = yytext[1]; return CARACTER; }
 
 
-"/"".*    {  }
+"//".*    {  }
 \n  { yycolumn = 1; }
 [ \t]+               { /* Ignorar espacios en blanco */ }
 
