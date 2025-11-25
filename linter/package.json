@@ -1,0 +1,26 @@
+{
+  "name": "tlp-a3-src-extension",
+  "displayName": "A3 Linter",
+  "description": "Syntax highlighting for A3 language",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "tlp-a3-src",
+      "aliases": ["TLP A3 SRC", "tlp-a3-src"],
+      "extensions": [".a3"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "tlp-a3-src",
+      "scopeName": "source.tlp",
+      "path": "./syntaxes/tlp.tmLanguage.json"
+    }]
+  },
+  "publisher": "A3Linter"
+}

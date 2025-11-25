@@ -1,0 +1,96 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "TLP SRC",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "#identifiers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "begin": "//",
+          "end": "$",
+          "name": "comment.line.double-slash.tlp"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": "\\b(start|end|if|else|while|for|return|exec|proc)\\b",
+          "name": "keyword.control.tlp"
+        },
+        {
+          "match": "\\b(and|or|not)\\b",
+          "name": "keyword.operator.word.tlp"
+        }
+      ]
+    },
+    "types": {
+      "match": "\\b(bool|char|int|float|void)\\b",
+      "name": "storage.type.tlp"
+    },
+    "constants": {
+      "match": "\\b(true|false)\\b",
+      "name": "constant.language.tlp"
+    },
+    "strings": {
+      "name": "string.quoted.single.tlp",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "name": "constant.character.escape.tlp",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "match": "\\b\\d+(\\.\\d+)?\\b",
+      "name": "constant.numeric.tlp"
+    },
+    "operators": {
+      "match": "(<=|>=|==|!=|<|>|\\+|\\-|\\*|/|%|=)",
+      "name": "keyword.operator.tlp"
+    },
+    "functions": {
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.tlp"
+        }
+      }
+    },
+    "identifiers": {
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+      "name": "variable.other.tlp"
+    }
+  },
+  "scopeName": "source.tlp"
+}
