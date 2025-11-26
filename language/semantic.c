@@ -7,6 +7,9 @@
 static char* builtin_functions[] = {
     "digitalRead",
     "digitalWrite",
+    "analogRead",
+    "pwmWrite",
+    "pinMode",
     "print",
     "forward_ms",
     "back_ms",
