@@ -19,7 +19,7 @@ int main (int argc, char **argv) {
         return 1;
     }
     Node* ast = parse_program();
-    ast_print(ast, 0);
+    // ast_print(ast, 0);
     analyze_program(ast);
     if (!translate_program(ast, "program.vmcode")) {
         fprintf(stderr, "Code generation failed. See diagnostics above.\n");
