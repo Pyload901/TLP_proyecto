@@ -82,8 +82,8 @@ const int SAFETY_DELAY = 500;
 int speed_global = 255;
 
 // --- IR Sensors configuration ---
-const int sensorIzqPin = 34;
-const int sensorDerPin = 35;
+const int sensorIzqPin = 35;
+const int sensorDerPin = 34;
 int lecturaSensorIzq = 0;
 int lecturaSensorDer = 0;
 int umbralIzq = 1500;
