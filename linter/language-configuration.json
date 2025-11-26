@@ -3,18 +3,18 @@
     "lineComment": "//"
   },
   "brackets": [
-    ["{", "}"],
+    ["start", "end"],
     ["[", "]"],
     ["(", ")"]
   ],
   "autoClosingPairs": [
-    { "open": "{", "close": "}" },
+    { "open": "start", "close": "end" },
     { "open": "[", "close": "]" },
     { "open": "(", "close": ")" },
     { "open": "'", "close": "'", "notIn": ["string", "comment"] }
   ],
   "surroundingPairs": [
-    ["{", "}"],
+    ["start", "end"],
     ["[", "]"],
     ["(", ")"],
     ["'", "'"]

@@ -6,6 +6,9 @@
       "include": "#comments"
     },
     {
+      "include": "#punctuation"
+    },
+    {
       "include": "#keywords"
     },
     {
@@ -43,7 +46,7 @@
     "keywords": {
       "patterns": [
         {
-          "match": "\\b(start|end|if|else|while|for|return|exec|proc)\\b",
+          "match": "\\b(if|else|while|for|return|exec|proc)\\b",
           "name": "keyword.control.tlp"
         },
         {
@@ -90,6 +93,10 @@
     "identifiers": {
       "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
       "name": "variable.other.tlp"
+    },
+    "punctuation": {
+      "match": "\\bstart\\b|\\bend\\b",
+      "name": "punctuation.section.block.tlp"
     }
   },
   "scopeName": "source.tlp"

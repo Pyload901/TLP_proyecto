@@ -2,7 +2,7 @@
   "name": "tlp-a3-src-extension",
   "displayName": "A3 Linter",
   "description": "Syntax highlighting for A3 language",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.70.0"
   },

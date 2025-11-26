@@ -9,7 +9,7 @@ LANGUAGE_DIR = os.path.join(ROOT_DIR, "language")
 VM_TEST_DIR = os.path.join(ROOT_DIR, "vm/test")
 PARSER_EXE = os.path.join(LANGUAGE_DIR, "parser")
 VM_RUNNER_EXE = os.path.join(VM_TEST_DIR, "vm_runner")
-TEST_SRC = os.path.join(LANGUAGE_DIR, "test.src")
+TEST_SRC = os.path.join(LANGUAGE_DIR, "test.a3")
 VM_CODE = os.path.join(LANGUAGE_DIR, "program.vmcode")
 
 def run_command(cmd, cwd=None):

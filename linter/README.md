@@ -8,4 +8,4 @@ This is a simple VS Code extension to provide syntax highlighting for the TLP A3
 - Basic bracket matching and comment toggling.
 
 ## Last update
-- Fix README.md
+- Add better linter for start end expressions as they represent the following characters: {}
