@@ -6,7 +6,7 @@ typedef enum {
     DOUBLE,
     CHAR,
     BOOL,
-    VOID,
+    VOID
 } BaseType;
 
 typedef struct Type {
