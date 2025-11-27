@@ -920,19 +920,19 @@ exec print(counter);
 </tr>
 <tr>
 <td><code>forward_ms</code></td>
-<td>Hace avanzar el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el robot se mueve indefinidamente sin importar el valor del parámetro.</td>
+<td>Hace avanzar el robot durante los milisegundos indicados, usa 0 para moverlo indefinidamente.</td>
 </tr>
 <tr>
 <td><code>back_ms</code></td>
-<td>Hace retroceder el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro indicados.</td>
+<td>Hace retroceder el robot durante los milisegundos indicados, usa 0 para moverlo indefinidamente.</td>
 </tr>
 <tr>
 <td><code>turnLeft_ms</code></td>
-<td>Ordena un giro a la izquierda, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.</td>
+<td>Ordena un giro a la izquierda durante los milisegundos indicados, usa 0 para moverlo indefinidamente.</td>
 </tr>
 <tr>
 <td><code>turnRight_ms</code></td>
-<td>Ordena un giro a la derecha, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.</td>
+<td>Ordena un giro a la derecha durante los milisegundos indicados, usa 0 para moverlo indefinidamente.</td>
 </tr>
 <tr>
 <td><code>readLeftSensor</code></td>
@@ -941,6 +941,14 @@ exec print(counter);
 <tr>
 <td><code>readRightSensor</code></td>
 <td>Devuelve la lectura del sensor montado en el lado derecho en el pin 34.</td>
+</tr>
+<tr>
+<td><code>setSpeed</code></td>
+<td>Configura la velocidad que utilizará el robot en un rango entre <code>[0-255]</code>.</td>
+</tr>
+<tr>
+<td><code>stopMotors</code></td>
+<td>Detiene completamente el robot.</td>
 </tr>
 </tbody>
 </table>
