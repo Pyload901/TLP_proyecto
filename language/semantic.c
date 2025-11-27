@@ -175,7 +175,22 @@ void analyze_symbols(Node *node)
                     check_type_compatible(sym->type, elem_type, var_name);
                 }
             } else {
-                Type value_type = parse_type(node->right->node_type);
+                Type value_type;
+                if (strcmp(node->right->node_type, "EXEC") == 0)
+                {
+                    char *func_name = node->right->value;
+                    Symbol *func_sym = sym_lookup(func_name);
+                    if (!func_sym || func_sym->symbol_type != SYMBOL_FUNCTION)
+                    {
+                        fprintf(stderr, "Error: Function %s not declared.\n", func_name);
+                        exit(1);
+                    }
+                    value_type = func_sym->type;
+                }
+                else
+                {
+                    value_type = parse_type(node->right->node_type);
+                }
                 check_type_compatible(sym->type, value_type, var_name);
             }
         }
