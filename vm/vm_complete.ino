@@ -140,18 +140,18 @@ void forward_ms(int ms) {
 }
 
 void back_ms(int ms) {
-    int pwmValue = speed_global;
+    int pwmValue = -speed_global;
     if (ms < 0)
     {
         ms = 0;
     }
 
-    // Izquierdo hacia atrás
-    digitalWrite(L_IN1, LOW);
-    digitalWrite(L_IN2, HIGH);
-    // Derecho hacia atrás
-    digitalWrite(R_IN3, LOW);
-    digitalWrite(R_IN4, HIGH);
+    // Izquierdo hacia adelante
+    digitalWrite(L_IN1, HIGH);
+    digitalWrite(L_IN2, LOW);
+    // Derecho hacia adelante
+    digitalWrite(R_IN3, HIGH);
+    digitalWrite(R_IN4, LOW);
 
     analogWrite(L_ENA, pwmValue);
     analogWrite(R_ENB, pwmValue);
