@@ -6,15 +6,15 @@ Este capítulo describe la sintaxis y la semántica del lenguaje TLP. La especif
 
 - **Identificadores**: comienzan con una letra y pueden contener letras, dígitos o `_`.
 - **Literales**:
-  - Enteros: dígitos decimales (`42`, `0`, `1024`).
-  - Dobles: dígitos con punto decimal (`3.14`).
-  - Caracteres: comillas simples (`'a'`).
-  - Booleanos: `true`, `false`.
+    - Enteros: dígitos decimales (`42`, `0`, `1024`).
+    - Dobles: dígitos con punto decimal (`3.14`).
+    - Caracteres: comillas simples (`'a'`).
+    - Booleanos: `true`, `false`.
 - **Comentarios**: `// comentario de línea` y `/* comentario de bloque */`.
 
 ### Palabras Reservadas
 
-`int`, `float`, `char`, `bool`, `void`, `function`, `return`, `if`, `else`, `for`, `while`, `start`, `end`, `exec`.
+`int`, `float`, `char`, `bool`, `void`, `proc`, `return`, `if`, `else`, `for`, `while`, `start`, `end`, `exec`.
 
 ## Tipos
 
@@ -50,7 +50,7 @@ La gramática continúa con producciones para expresiones, precedencias e indexa
 
 ```
 int counter;
-double velocity = 0.0;
+float velocity = 0.0;
 bool flags[4];
 ```
 
