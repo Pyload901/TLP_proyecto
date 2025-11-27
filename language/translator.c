@@ -18,6 +18,7 @@ typedef enum {
     OP_DIV      = 0x04,
     OP_AND      = 0x06,
     OP_OR       = 0x07,
+    OP_SHL      = 0x0B,
     OP_NOT      = 0x09,
     OP_CMP      = 0x0A,
     OP_LOAD     = 0x10,
@@ -53,7 +54,6 @@ typedef enum {
     B_BACK          = 51, // registers[0]=ms
     B_TURN_LEFT     = 52, // registers[0]=ms
     B_TURN_RIGHT    = 53, // registers[0]=ms
-    B_STOP          = 55,
     // IR sensor builtins
     B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
     B_READ_IR_RIGHT = 61
@@ -82,6 +82,7 @@ static const char *opcode_name(Opcode op) {
         case OP_DIV:     return "DIV";
         case OP_AND:     return "AND";
         case OP_OR:      return "OR";
+        case OP_SHL:     return "SHL";
         case OP_NOT:     return "NOT";
         case OP_CMP:     return "CMP";
         case OP_LOAD:    return "LOAD";
@@ -323,9 +324,6 @@ static int get_builtin_trap_id(const char *name) {
     if (strcmp(name, "readRightSensor") == 0) {
         return B_READ_IR_RIGHT;
     }
-    if (strcmp(name, "stopMotors") == 0) {
-        return B_STOP;
-    }
     return -1;  /* Not a builtin */
 }
 
@@ -375,10 +373,39 @@ static uint16_t current_address(const Translator *tr) {
 }
 
 static void emit_load_const(Translator *tr, uint8_t dst, long value) {
-    if (value >= 0 && value <= 255) {
-        emit_instruction(&tr->code, OP_LOADI, dst, (uint8_t) value);
-    } else {
-        translator_fail(tr, "Immediate out of supported range (0..255)");
+    int32_t signed_value = (int32_t) value;
+    uint32_t bits = (uint32_t) signed_value;
+
+    if ((bits & 0xFFFFFF00u) == 0) {
+        emit_instruction(&tr->code, OP_LOADI, dst, (uint8_t) bits);
+        return;
+    }
+
+    uint8_t bytes[4];
+    bytes[0] = (uint8_t) ((bits >> 24) & 0xFFu);
+    bytes[1] = (uint8_t) ((bits >> 16) & 0xFFu);
+    bytes[2] = (uint8_t) ((bits >> 8) & 0xFFu);
+    bytes[3] = (uint8_t) (bits & 0xFFu);
+
+    emit_instruction(&tr->code, OP_LOADI, dst, bytes[0]);
+
+    for (int i = 1; i < 4; ++i) {
+        emit_instruction(&tr->code, OP_SHL, dst, 8);
+        emit_instruction(&tr->code, OP_LOAD, dst, 0);
+
+        if (bytes[i] == 0) {
+            continue;
+        }
+
+        uint8_t tmp = alloc_temp(tr);
+        if (tr->failed) {
+            return;
+        }
+
+        emit_instruction(&tr->code, OP_LOADI, tmp, bytes[i]);
+        emit_instruction(&tr->code, OP_OR, dst, tmp);
+        emit_instruction(&tr->code, OP_LOAD, dst, 0);
+        release_temp(tr, tmp);
     }
 }
 
