@@ -87,7 +87,7 @@ const int sensorDerPin = 34;
 int lecturaSensorIzq = 0;
 int lecturaSensorDer = 0;
 int umbralIzq = 1500;
-int umbralDer = 1500;
+int umbralDer = 2100;
 
 // Global program storage
 uint8_t programBuffer[2048];
