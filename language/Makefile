@@ -2,8 +2,8 @@ CC=gcc
 CFLAGS=-Wall -std=c11 -Wextra -O2 -D_POSIX_C_SOURCE=200809L
 LEX=flex
 
-all: parser
-parser: lexer.yy.c parser.o ast.o symtab.o semantic.o translator.o main.o
+all: a3c
+a3c: lexer.yy.c parser.o ast.o symtab.o semantic.o translator.o main.o
 	$(CC) $(CFLAGS) -o $@ lexer.yy.c parser.o ast.o symtab.o semantic.o translator.o main.o
 symtab.o: symtab.c symtab.h
 	$(CC) $(CFLAGS) -c -o $@ symtab.c
