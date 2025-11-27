@@ -1,5 +1,5 @@
-site_name: Lenguaje TLP
-site_description: "Documentación de referencia del lenguaje educativo TLP y su toolchain TinyVM."
+site_name: Lenguaje A3
+site_description: "Documentación de referencia del lenguaje A3 y su toolchain TinyVM."
 site_author: Pyload901
 repo_url: https://github.com/Pyload901/TLP_proyecto
 nav:

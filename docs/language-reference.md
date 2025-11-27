@@ -105,6 +105,25 @@ exec digitalWrite(pin, value);
 exec print(counter);
 ```
 
+#### Funciones predefinidas disponibles vía `exec`
+
+| Nombre            | Descripción breve                                                                      |
+|-------------------|----------------------------------------------------------------------------------------|
+| `digitalRead`     | Lee el estado lógico de un pin digital configurado como entrada.                       |
+| `digitalWrite`    | Escribe `HIGH`/`LOW` en un pin digital configurado como salida.                         |
+| `analogRead`      | Devuelve la lectura ADC del pin configurado para entradas analógicas.                  |
+| `pwmWrite`        | Genera una señal PWM en el pin indicado con el ciclo de trabajo proporcionado.         |
+| `pinMode`         | Configura un pin como `INPUT`, `OUTPUT` u otros modos compatibles con TinyVM.           |
+| `print`           | Envía al puerto serie el valor evaluado, útil para depuración.                          |
+| `forward_ms`      | Hace avanzar el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el robot se mueve indefinidamente sin importar el valor del parámetro.                    |
+| `back_ms`         | Hace retroceder el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro indicados.                           |
+| `turnLeft_ms`     | Ordena un giro a la izquierda, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.                  |
+| `turnRight_ms`    | Ordena un giro a la derecha, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.                    |
+| `readLeftSensor`  | Devuelve la última lectura del sensor montado en el lado izquierdo en el pin 35  |
+| `readRightSensor` | Devuelve la lectura del sensor montado en el lado derecho en el pin 34.                             |
+
+Cada invocación mediante `exec nombre(arg1, arg2, ...)` evalúa todos los argumentos antes de tocar hardware y se traduce a la instrucción `TRAP` correspondiente en TinyVM.
+
 ## Expresiones
 
 - Unarios: `-x`, `not flag`.
