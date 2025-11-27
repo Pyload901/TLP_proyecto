@@ -115,12 +115,14 @@ exec print(counter);
 | `pwmWrite`        | Genera una señal PWM en el pin indicado con el ciclo de trabajo proporcionado.         |
 | `pinMode`         | Configura un pin como `INPUT`, `OUTPUT` u otros modos compatibles con TinyVM.           |
 | `print`           | Envía al puerto serie el valor evaluado, útil para depuración.                          |
-| `forward_ms`      | Hace avanzar el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el robot se mueve indefinidamente sin importar el valor del parámetro.                    |
-| `back_ms`         | Hace retroceder el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro indicados.                           |
-| `turnLeft_ms`     | Ordena un giro a la izquierda, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.                  |
-| `turnRight_ms`    | Ordena un giro a la derecha, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.                    |
+| `forward_ms`      | Hace avanzar el robot durante los milisegundos indicados, usa 0 para moverlo indefinidamente.                    |
+| `back_ms`         | Hace retroceder el robot durante los milisegundos indicados, usa 0 para moverlo indefinidamente.                         |
+| `turnLeft_ms`     | Ordena un giro a la izquierda durante los milisegundos indicados, usa 0 para moverlo indefinidamente.                 |
+| `turnRight_ms`    | Ordena un giro a la derecha durante los milisegundos indicados, usa 0 para moverlo indefinidamente.                   |
 | `readLeftSensor`  | Devuelve la última lectura del sensor montado en el lado izquierdo en el pin 35  |
 | `readRightSensor` | Devuelve la lectura del sensor montado en el lado derecho en el pin 34.                             |
+| `setSpeed` | Configura la velocidad que utilizará el robot en un rango entre `[0-255]`.                             |
+| `stopMotors` | Detiene completamente el robot.                             |
 
 Cada invocación mediante `exec nombre(arg1, arg2, ...)` evalúa todos los argumentos antes de tocar hardware y se traduce a la instrucción `TRAP` correspondiente en TinyVM.
 
