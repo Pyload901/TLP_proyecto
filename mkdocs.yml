@@ -1,0 +1,29 @@
+site_name: Lenguaje TLP
+site_description: "Documentación de referencia del lenguaje educativo TLP y su toolchain TinyVM."
+site_author: Pyload901
+repo_url: https://github.com/Pyload901/TLP_proyecto
+nav:
+  - Inicio: index.md
+  - Primeros Pasos: getting-started.md
+  - Referencia del Lenguaje: language-reference.md
+  - Integración con la VM: vm-integration.md
+  - Herramientas: tooling.md
+theme:
+  name: material
+  palette:
+    scheme: default
+    primary: indigo
+    accent: deep orange
+markdown_extensions:
+  - admonition
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+plugins:
+  - search
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Pyload901/TLP_proyecto
+      name: Source Repository
