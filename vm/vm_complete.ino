@@ -118,7 +118,7 @@ void forward_ms(int ms) {
 }
 
 void back_ms(int ms) {
-    int pwmValue = -255;
+    int pwmValue = 255;
 
     // Izquierdo hacia atrás
     digitalWrite(L_IN1, LOW);
