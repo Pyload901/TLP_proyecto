@@ -103,7 +103,7 @@ void pwm_write_pin(int pin, int pwmValue) {
     analogWrite(pin, pwmValue);
 }
 
-static void stop_motors()
+void stop_motors()
 {
     digitalWrite(L_IN1, LOW);
     digitalWrite(L_IN2, LOW);
@@ -130,10 +130,11 @@ void forward_ms(int ms) {
     analogWrite(L_ENA, pwmValue);
     analogWrite(R_ENB, pwmValue);
 
-    if (ms > 0)
+    if (ms > 1)
     {
         delay(ms);
         stop_motors();
+        delay(ms);
     }
 }
 
@@ -154,10 +155,11 @@ void back_ms(int ms) {
     analogWrite(L_ENA, pwmValue);
     analogWrite(R_ENB, pwmValue);
 
-    if (ms > 0)
+    if (ms > 1)
     {
         delay(ms);
         stop_motors();
+        delay(ms);
     }
 }
 
@@ -178,10 +180,11 @@ void turnLeft_ms(int ms) {
     digitalWrite(R_IN4, LOW);
     analogWrite(R_ENB, pwmValue);
 
-    if (ms > 0)
+    if (ms > 1)
     {
         delay(ms);
         stop_motors();
+        delay(ms);
     }
 }
 
@@ -201,16 +204,18 @@ void turnRight_ms(int ms) {
     digitalWrite(R_IN3, LOW);
     digitalWrite(R_IN4, LOW);
     analogWrite(R_ENB, 0);
-
-    if (ms > 0)
+    if (ms > 1)
     {
         delay(ms);
         stop_motors();
+        delay(ms);
     }
 }
 
 void set_speed(int s) {
-    speed_global = constrain(s, 0, 255);
+    if (s > 255) s = 255;
+    if (s < 0) s = 0;
+    speed_global = s;
 }
 
 void initSensors() {
