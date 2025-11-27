@@ -42,7 +42,7 @@ Instruccion -> Asignacion ; | Declaracion ; | For | While | If | Exec_funcion ; 
 ...
 ```
 
-La gramática continúa con producciones para expresiones, precedencias e indexaciones de arreglos, tal como se detalla en `/gramatica`. La precedencia de operadores sigue el orden del archivo: unarios `!`/`-`, multiplicativos `* / %`, aditivos `+ -`, comparaciones, `&&`, `||`.
+La gramática continúa con producciones para expresiones, precedencias e indexaciones de arreglos, tal como se detalla en `/gramatica`. La precedencia de operadores sigue el orden del archivo: unarios `!`/`-`, multiplicativos `* / %`, aditivos `+ -`, comparaciones, `and`, `or`.
 
 ## Sentencias
 
@@ -123,6 +123,7 @@ exec print(counter);
 | `readRightSensor` | Devuelve la lectura del sensor montado en el lado derecho en el pin 34.                             |
 | `setSpeed` | Configura la velocidad que utilizará el robot en un rango entre `[0-255]`.                             |
 | `stopMotors` | Detiene completamente el robot.                             |
+| `delay` | Agrega un delay al código con los milisegundos definidos por el parámetro.                             |
 
 Cada invocación mediante `exec nombre(arg1, arg2, ...)` evalúa todos los argumentos antes de tocar hardware y se traduce a la instrucción `TRAP` correspondiente en TinyVM.
 

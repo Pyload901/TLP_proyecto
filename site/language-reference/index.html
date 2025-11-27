@@ -840,7 +840,7 @@ BloqueAux -&gt; Instruccion BloqueAux | λ
 Instruccion -&gt; Asignacion ; | Declaracion ; | For | While | If | Exec_funcion ; | Retorno_funcion ;
 ...
 </code></pre>
-<p>La gramática continúa con producciones para expresiones, precedencias e indexaciones de arreglos, tal como se detalla en <code>/gramatica</code>. La precedencia de operadores sigue el orden del archivo: unarios <code>!</code>/<code>-</code>, multiplicativos <code>* / %</code>, aditivos <code>+ -</code>, comparaciones, <code>&amp;&amp;</code>, <code>||</code>.</p>
+<p>La gramática continúa con producciones para expresiones, precedencias e indexaciones de arreglos, tal como se detalla en <code>/gramatica</code>. La precedencia de operadores sigue el orden del archivo: unarios <code>!</code>/<code>-</code>, multiplicativos <code>* / %</code>, aditivos <code>+ -</code>, comparaciones, <code>and</code>, <code>or</code>.</p>
 <h2 id="sentencias">Sentencias<a class="headerlink" href="#sentencias" title="Permanent link">&para;</a></h2>
 <h3 id="declaraciones">Declaraciones<a class="headerlink" href="#declaraciones" title="Permanent link">&para;</a></h3>
 <pre><code>int counter;
@@ -949,6 +949,10 @@ exec print(counter);
 <tr>
 <td><code>stopMotors</code></td>
 <td>Detiene completamente el robot.</td>
+</tr>
+<tr>
+<td><code>delay</code></td>
+<td>Agrega un delay al código con los milisegundos definidos por el parámetro.</td>
 </tr>
 </tbody>
 </table>
