@@ -1,10 +1,3 @@
-int proc suma(int a, int b) start
-  int c = a+b;
-  return c;
-end
-void proc printear() start
-  exec print(42);
-end
 void proc loop() start
   int izquierda = exec readLeftSensor();
   int derecha = exec readRightSensor();
@@ -27,5 +20,5 @@ void proc loop() start
   end
 end
 start
-  int x = exec suma(1000, 5);
+  exec print(51);
 end
