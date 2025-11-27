@@ -1,4 +1,17 @@
 void proc loop() start
-  exec  back_ms(0);
-  
+  int izquierda = exec readLeftSensor();
+  int derecha = exec readRightSensor();
+  exec forward_ms(0);
+
+  // 1. Lógica para detectar el CAMBIO de dirección (el "interruptor")
+  if (izquierda == 1 and derecha == 1) start
+    int speed = exec getSpeed();
+    if (not(speed < 50)) start
+        speed = speed - 50;
+      end
+    exec setSpeed(speed);
+    exec forward_ms(0);
+    exec delay(1000);
+
+  end
 end
