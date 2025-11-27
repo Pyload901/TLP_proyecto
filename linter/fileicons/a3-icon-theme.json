@@ -1,0 +1,10 @@
+{
+  "iconDefinitions": {
+    "_a3": {
+      "iconPath": "./a3-file.svg"
+    }
+  },
+  "fileExtensions": {
+    "a3": "_a3"
+  }
+}
