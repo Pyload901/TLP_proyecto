@@ -8,6 +8,7 @@
 #define VM_NUM_REGISTERS 8
 #define MAX_ARRAY_BINDINGS 32
 #define MAX_LABELS 128
+#define MAX_GLOBAL_VARS (VM_NUM_REGISTERS - 1)
 
 /* Opcodes subset needed for the current translator */
 typedef enum {
@@ -77,6 +78,17 @@ typedef struct {
     size_t param_count;
 } FunctionInfo;
 
+typedef struct {
+    char *name;
+    uint8_t reg;
+} VarBinding;
+
+typedef struct {
+    VarBinding binding;
+    Node *init_expr;
+    bool has_initializer;
+} GlobalVar;
+
 static const char *opcode_name(Opcode op) {
     switch (op) {
         case OP_NOP:     return "NOP";
@@ -114,11 +126,6 @@ static const char *opcode_name(Opcode op) {
 
 typedef struct {
     char *name;
-    uint8_t reg;
-} VarBinding;
-
-typedef struct {
-    char *name;
     uint16_t base_addr;
     size_t length;
 } ArrayBinding;
@@ -143,6 +150,10 @@ typedef struct {
         char *text;
     } labels[MAX_LABELS];
     size_t label_count;
+    GlobalVar globals[MAX_GLOBAL_VARS];
+    size_t global_count;
+    uint8_t global_regs_mask;
+    bool globals_processed;
 } Translator;
 
 typedef struct {
@@ -194,6 +205,9 @@ static void translator_init(Translator *tr) {
     tr->failed = false;
     tr->error[0] = '\0';
     tr->label_count = 0;
+    tr->global_count = 0;
+    tr->global_regs_mask = 0;
+    tr->globals_processed = false;
 }
 
 static void translator_destroy(Translator *tr) {
@@ -209,6 +223,9 @@ static void translator_destroy(Translator *tr) {
     }
     for (size_t i = 0; i < tr->label_count; ++i) {
         free(tr->labels[i].text);
+    }
+    for (size_t i = 0; i < tr->global_count; ++i) {
+        free(tr->globals[i].binding.name);
     }
 }
 
@@ -233,13 +250,26 @@ static void translator_reset_registers(Translator *tr) {
     translator_clear_vars(tr);
     translator_clear_arrays(tr);
     tr->next_var_reg = 1;
-    tr->used_regs_mask = 1;
+    tr->used_regs_mask = (uint8_t) (1 | tr->global_regs_mask);
+    while (tr->next_var_reg < VM_NUM_REGISTERS &&
+           (tr->used_regs_mask & (1 << tr->next_var_reg))) {
+        tr->next_var_reg++;
+    }
 }
 
 static VarBinding *find_var(Translator *tr, const char *name) {
     for (size_t i = 0; i < tr->var_count; ++i) {
         if (strcmp(tr->vars[i].name, name) == 0) {
             return &tr->vars[i];
+        }
+    }
+    return NULL;
+}
+
+static GlobalVar *find_global(Translator *tr, const char *name) {
+    for (size_t i = 0; i < tr->global_count; ++i) {
+        if (strcmp(tr->globals[i].binding.name, name) == 0) {
+            return &tr->globals[i];
         }
     }
     return NULL;
@@ -343,8 +373,16 @@ static int get_builtin_trap_id(const char *name) {
     return -1;  /* Not a builtin */
 }
 
+static void advance_next_var_reg(Translator *tr) {
+    while (tr->next_var_reg < VM_NUM_REGISTERS &&
+           (tr->used_regs_mask & (1 << tr->next_var_reg))) {
+        tr->next_var_reg++;
+    }
+}
+
 static VarBinding *register_var(Translator *tr, const char *name) {
-    if (tr->used_regs_mask & (1 << tr->next_var_reg)) {
+    advance_next_var_reg(tr);
+    if (tr->next_var_reg >= VM_NUM_REGISTERS) {
         translator_fail(tr, "Register limit reached (max 7 user registers)");
         return NULL;
     }
@@ -352,9 +390,18 @@ static VarBinding *register_var(Translator *tr, const char *name) {
         translator_fail(tr, "Too many variables for current translator backend");
         return NULL;
     }
+    if (tr->global_count > 0) {
+        for (size_t i = 0; i < tr->global_count; ++i) {
+            if (strcmp(tr->globals[i].binding.name, name) == 0) {
+                translator_fail(tr, "Identifier already declared as global variable");
+                return NULL;
+            }
+        }
+    }
     VarBinding *binding = &tr->vars[tr->var_count++];
     binding->name = strdup(name);
     binding->reg = tr->next_var_reg++;
+    advance_next_var_reg(tr);
     tr->used_regs_mask |= (1 << binding->reg);
     return binding;
 }
@@ -570,6 +617,134 @@ static void push_label(Translator *tr, const char *text) {
     tr->label_count++;
 }
 
+static Node *extract_initializer_expr(Translator *tr, Node *expr, const char *var_name) {
+    (void) var_name;
+    if (!expr) {
+        return NULL;
+    }
+    if (strcmp(expr->node_type, "ASSIGN") == 0 && expr->right) {
+        expr = expr->right;
+    }
+    if (strcmp(expr->node_type, "ARRAY_VALUES") == 0) {
+        if (!expr->list || expr->list->size != 1) {
+            translator_fail(tr, "Global scalar initialization requires exactly one literal value");
+            return NULL;
+        }
+        expr = expr->list->items[0];
+    }
+    return expr;
+}
+
+static uint8_t alloc_global_register(Translator *tr) {
+    for (uint8_t reg = 1; reg < VM_NUM_REGISTERS; ++reg) {
+        if (!(tr->global_regs_mask & (1 << reg))) {
+            tr->global_regs_mask |= (1 << reg);
+            return reg;
+        }
+    }
+    translator_fail(tr, "No registers available for global variables");
+    return 0;
+}
+
+static bool register_global_scalar(Translator *tr, Node *decl) {
+    if (!decl->value) {
+        translator_fail(tr, "Global declaration missing identifier");
+        return false;
+    }
+    if (tr->global_count >= MAX_GLOBAL_VARS) {
+        translator_fail(tr, "Exceeded maximum number of global variables supported");
+        return false;
+    }
+    if (find_global(tr, decl->value)) {
+        translator_fail(tr, "Duplicate global variable declaration");
+        return false;
+    }
+    uint8_t reg = alloc_global_register(tr);
+    if (tr->failed) {
+        return false;
+    }
+    GlobalVar *slot = &tr->globals[tr->global_count++];
+    slot->binding.name = strdup(decl->value);
+    if (!slot->binding.name) {
+        translator_fail(tr, "Out of memory while registering global variable");
+        return false;
+    }
+    slot->binding.reg = reg;
+    slot->init_expr = extract_initializer_expr(tr, decl->right, decl->value);
+    if (tr->failed) {
+        return false;
+    }
+    slot->has_initializer = slot->init_expr != NULL;
+    return true;
+}
+
+static bool process_globals_function(Translator *tr, Node *func) {
+    if (!func || !func->value) {
+        translator_fail(tr, "Malformed globals function");
+        return false;
+    }
+    if (tr->globals_processed) {
+        translator_fail(tr, "Duplicate globals() definition");
+        return false;
+    }
+    if (!func->left || !func->left->value || strcmp(func->left->value, "VOID") != 0) {
+        translator_fail(tr, "globals() must return void");
+        return false;
+    }
+    if (func->list && func->list->size > 0) {
+        translator_fail(tr, "globals() must not declare parameters");
+        return false;
+    }
+    Node *body = func->right;
+    if (!body || strcmp(body->node_type, "BLOCK") != 0) {
+        translator_fail(tr, "globals() is missing a block body");
+        return false;
+    }
+    if (!body->list) {
+        tr->globals_processed = true;
+        return true;
+    }
+    for (int i = 0; i < body->list->size; ++i) {
+        Node *stmt = body->list->items[i];
+        if (!stmt) {
+            continue;
+        }
+        if (strcmp(stmt->node_type, "DECLARACION") == 0) {
+            if (!register_global_scalar(tr, stmt) || tr->failed) {
+                return false;
+            }
+            continue;
+        }
+        translator_fail(tr, "globals() only supports simple variable declarations");
+        return false;
+    }
+    tr->globals_processed = true;
+    return true;
+}
+
+static bool emit_global_initializers(Translator *tr) {
+    if (tr->global_count == 0) {
+        return true;
+    }
+    push_label(tr, ".globals");
+    for (size_t i = 0; i < tr->global_count; ++i) {
+        GlobalVar *g = &tr->globals[i];
+        if (g->has_initializer) {
+            RegValue value = translate_expression(tr, g->init_expr);
+            if (tr->failed) {
+                return false;
+            }
+            emit_move(tr, g->binding.reg, value.reg);
+            if (value.is_temp) {
+                release_temp(tr, value.reg);
+            }
+        } else {
+            emit_load_const(tr, g->binding.reg, 0);
+        }
+    }
+    return true;
+}
+
 static RegValue translate_exec_expr(Translator *tr, Node *node) {
     RegValue error = make_error_reg();
     if (!node->value) {
@@ -690,8 +865,13 @@ static RegValue translate_expression(Translator *tr, Node *expr) {
     if (strcmp(kind, "ID") == 0) {
         VarBinding *binding = find_var(tr, expr->value);
         if (!binding) {
-            translator_fail(tr, "Undeclared identifier encountered during translation");
-            return make_error_reg();
+            GlobalVar *global = find_global(tr, expr->value);
+            if (!global) {
+                translator_fail(tr, "Undeclared identifier encountered during translation");
+                return make_error_reg();
+            }
+            RegValue r = {global->binding.reg, false};
+            return r;
         }
         RegValue r = {binding->reg, false};
         return r;
@@ -883,9 +1063,13 @@ static bool translate_assignment(Translator *tr, Node *node) {
     if (array && !binding) {
         return translate_array_assignment(tr, array, node->right);
     }
+    GlobalVar *global_binding = NULL;
     if (!binding) {
-        translator_fail(tr, "Assignment to undeclared variable");
-        return false;
+        global_binding = find_global(tr, target);
+        if (!global_binding) {
+            translator_fail(tr, "Assignment to undeclared variable");
+            return false;
+        }
     }
     Node *rhs = node->right;
     if (rhs && strcmp(rhs->node_type, "ARRAY_VALUES") == 0) {
@@ -897,7 +1081,8 @@ static bool translate_assignment(Translator *tr, Node *node) {
     }
     RegValue value = translate_expression(tr, rhs);
     if (tr->failed) return false;
-    emit_move(tr, binding->reg, value.reg);
+    uint8_t dest_reg = binding ? binding->reg : global_binding->binding.reg;
+    emit_move(tr, dest_reg, value.reg);
     if (value.is_temp) release_temp(tr, value.reg);
     return true;
 }
@@ -1110,11 +1295,25 @@ static bool translate_root(Translator *tr, Node *root) {
     }
 
     int total_nodes = root->list->size;
+
+    for (int i = 0; i < total_nodes; ++i) {
+        Node *node = root->list->items[i];
+        if (node && strcmp(node->node_type, "FUNCTION") == 0 && node->value &&
+            strcmp(node->value, "globals") == 0) {
+            if (!process_globals_function(tr, node) || tr->failed) {
+                return false;
+            }
+        }
+    }
+
     int main_candidates = 0;
     bool has_functions = false;
     for (int i = 0; i < total_nodes; ++i) {
         Node *node = root->list->items[i];
         if (node && strcmp(node->node_type, "FUNCTION") == 0) {
+            if (node->value && strcmp(node->value, "globals") == 0) {
+                continue;
+            }
             has_functions = true;
         } else {
             main_candidates++;
@@ -1136,6 +1335,9 @@ static bool translate_root(Translator *tr, Node *root) {
         Node *node = root->list->items[i];
         if (!node) continue;
         if (strcmp(node->node_type, "FUNCTION") == 0) {
+            if (node->value && strcmp(node->value, "globals") == 0) {
+                continue;
+            }
             if (!translate_function(tr, node) || tr->failed) {
                 free(main_nodes);
                 return false;
@@ -1153,6 +1355,11 @@ static bool translate_root(Translator *tr, Node *root) {
     translator_reset_registers(tr);
     tr->in_function = false;
     tr->current_function = NULL;
+
+    if (!emit_global_initializers(tr) || tr->failed) {
+        free(main_nodes);
+        return false;
+    }
 
     bool ok = true;
     for (int i = 0; i < main_index; ++i) {

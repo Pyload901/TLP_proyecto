@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Cuerpo del archivo -->
+  <path d="M14 6h24l12 12v40a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"
+        fill="#0f172a"/>
+
+  <!-- Doble tono parte inferior -->
+  <path d="M10 40h40v18a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V40z"
+        fill="#1d4ed8"/>
+
+  <!-- “Pliegue” del archivo -->
+  <path d="M38 6v10a4 4 0 0 0 4 4h10L38 6z"
+        fill="#1e293b"/>
+
+  <!-- Texto A3 centrado en la parte inferior -->
+  <text x="50%" y="49"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-weight="700"
+        font-size="18"
+        fill="#e5e7eb">
+    A3
+  </text>
+</svg>

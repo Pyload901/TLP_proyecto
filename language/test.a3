@@ -1,3 +1,7 @@
+void proc globals() start
+  int mensaje = 51;
+end
+
 void proc loop() start
   int izquierda = exec readLeftSensor();
   int derecha = exec readRightSensor();
@@ -20,5 +24,5 @@ void proc loop() start
   end
 end
 start
-  exec print(51);
+  exec print(mensaje);
 end

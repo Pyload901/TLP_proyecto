@@ -96,6 +96,20 @@ end
 - Los argumentos se pasan por valor mediante la pila de TinyVM.
 - `return` abandona la función y coloca el valor en el registro `R6`.
 
+### Variables globales
+
+````
+void proc globals() start
+    int velocidad = 120;
+    bool debug = false;
+end
+````
+
+- `globals()` es opcional y solo puede declararse una vez.
+- Debe ser `void`, sin parámetros, y su cuerpo solo admite declaraciones simples.
+- Cada variable global reserva un registro físico; su valor inicial se genera al comienzo del bloque principal y está disponible en cualquier función, incluido `loop()`.
+- Actualmente no se admiten arreglos globales ni inicializaciones con literales de arreglo.
+
 ### Llamadas Integradas
 
 `exec` invoca traps de TinyVM (definidos en `vm_complete.ino`). Los argumentos se evalúan antes de ejecutar el trap:

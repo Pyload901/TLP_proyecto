@@ -55,4 +55,6 @@ Los argumentos se colocan convencionalmente en `R0`, `R1`, … antes de emitir l
 
 Cuando `vm_complete.ino` carga el bytecode, puede registrar la etiqueta `.loop` y ejecutar `TinyVM::runLoop()` dentro de `loop()`. Esto permite estructurar los programas como las funciones `setup` + `loop` típicas de Arduino.
 
+Cuando existe un bloque `globals()`, el traductor emite las instrucciones de inicialización justo antes del código principal y las anota con la etiqueta `.globals`. Estas asignaciones reservan registros estables para cada variable y se ejecutan una sola vez durante la fase de `setup`, por lo que los valores resultantes están disponibles antes de la primera iteración de `loop()`.
+
 Consulta `vm/vm_architecture.md` para profundizar en la definición de opcodes, marcos de pila y tiempos de ejecución.

@@ -36,6 +36,7 @@ void analyze_symbols(Node *node);
 void register_builtin_functions(void);
 void register_builtin_constants(void);
 void register_functions(Node *node);
+void register_global_variables(Node *node);
 void check_type_compatible(Type expected, Type actual, char *var_name);
 static Type infer_expression_type(Node *expr);
 static bool is_numeric_base(BaseType base);
@@ -79,6 +80,7 @@ void analyze_program(Node *root)
     symtab_init();
     register_builtin_constants();
     register_builtin_functions();
+    register_global_variables(root);
     register_functions(root);
     analyze_symbols(root);
 }
@@ -100,6 +102,110 @@ void register_builtin_constants(void)
     }
 }
 
+static void register_global_declaration(Node *decl)
+{
+    if (!decl || !decl->value || !decl->left || !decl->left->value)
+    {
+        fprintf(stderr, "Error: Declaración global mal formada.\n");
+        exit(1);
+    }
+    Type var_type = parse_type(decl->left->value);
+    if (var_type.base == VOID)
+    {
+        fprintf(stderr, "Error: Las variables globales no pueden ser de tipo void (%s).\n", decl->value);
+        exit(1);
+    }
+    if (sym_lookup_current(decl->value))
+    {
+        fprintf(stderr, "Error: Variable global %s redeclarada.\n", decl->value);
+        exit(1);
+    }
+    sym_insert(decl->value, SYMBOL_VARIABLE, var_type);
+
+    if (decl->right)
+    {
+        Node *init_expr = decl->right;
+        if (strcmp(init_expr->node_type, "ASSIGN") == 0 && init_expr->right)
+        {
+            init_expr = init_expr->right;
+        }
+        if (strcmp(init_expr->node_type, "ARRAY_VALUES") == 0)
+        {
+            fprintf(stderr, "Error: La inicialización global para %s debe ser escalar.\n", decl->value);
+            exit(1);
+        }
+        Type init_type = infer_expression_type(init_expr);
+        if (init_type.base == VOID)
+        {
+            fprintf(stderr, "Error: La inicialización global de %s no puede ser void.\n", decl->value);
+            exit(1);
+        }
+        check_type_compatible(var_type, init_type, decl->value);
+    }
+}
+
+void register_global_variables(Node *node)
+{
+    if (!node || !node->list)
+    {
+        return;
+    }
+    bool seen_globals = false;
+    for (int i = 0; i < node->list->size; i++)
+    {
+        Node *child = node->list->items[i];
+        if (!child || strcmp(child->node_type, "FUNCTION") != 0)
+        {
+            continue;
+        }
+        if (!child->value || strcmp(child->value, "globals") != 0)
+        {
+            continue;
+        }
+        if (seen_globals)
+        {
+            fprintf(stderr, "Error: globals() solo puede declararse una vez.\n");
+            exit(1);
+        }
+        seen_globals = true;
+        if (!child->left || !child->left->value || strcmp(child->left->value, "VOID") != 0)
+        {
+            fprintf(stderr, "Error: globals() debe declararse con tipo void.\n");
+            exit(1);
+        }
+        if (child->list && child->list->size > 0)
+        {
+            fprintf(stderr, "Error: globals() no acepta parámetros.\n");
+            exit(1);
+        }
+        Node *body = child->right;
+        if (!body || strcmp(body->node_type, "BLOCK") != 0)
+        {
+            fprintf(stderr, "Error: globals() requiere un bloque start/end.\n");
+            exit(1);
+        }
+        if (!body->list)
+        {
+            continue;
+        }
+        for (int j = 0; j < body->list->size; j++)
+        {
+            Node *stmt = body->list->items[j];
+            if (!stmt)
+            {
+                continue;
+            }
+            if (strcmp(stmt->node_type, "DECLARACION") == 0)
+            {
+                register_global_declaration(stmt);
+                continue;
+            }
+            fprintf(stderr, "Error: globals() solo permite declaraciones de variables.\n");
+            exit(1);
+        }
+    }
+}
+
 void register_functions(Node *node)
 {
     if (!node)
@@ -109,8 +215,12 @@ void register_functions(Node *node)
     {
         if (strcmp(nodes[i]->node_type, "FUNCTION") == 0)
         {
-            Node *func_node = (Node *)node->list->items[i];
+            Node *func_node = nodes[i];
             char *func_name = func_node->value;
+            if (strcmp(func_name, "globals") == 0)
+            {
+                continue;
+            }
             Type return_type = parse_type(func_node->left->value);
             if (sym_lookup_current(func_name))
             {
@@ -189,6 +299,10 @@ void analyze_symbols(Node *node)
     }
     else if (strcmp(node->node_type, "FUNCTION") == 0)
     {
+        if (node->value && strcmp(node->value, "globals") == 0)
+        {
+            return;
+        }
         Type function_type = parse_type(node->left->value);
         enter_scope();
         for (int i = 0; i < node->list->size; i++)
