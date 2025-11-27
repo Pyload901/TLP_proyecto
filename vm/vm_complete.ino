@@ -103,8 +103,22 @@ void pwm_write_pin(int pin, int pwmValue) {
     analogWrite(pin, pwmValue);
 }
 
+static void stop_motors()
+{
+    digitalWrite(L_IN1, LOW);
+    digitalWrite(L_IN2, LOW);
+    digitalWrite(R_IN3, LOW);
+    digitalWrite(R_IN4, LOW);
+    analogWrite(L_ENA, 0);
+    analogWrite(R_ENB, 0);
+}
+
 void forward_ms(int ms) {
-    int pwmValue = 255;
+    int pwmValue = speed_global;
+    if (ms < 0)
+    {
+        ms = 0;
+    }
 
     // Izquierdo hacia adelante
     digitalWrite(L_IN1, HIGH);
@@ -115,10 +129,20 @@ void forward_ms(int ms) {
 
     analogWrite(L_ENA, pwmValue);
     analogWrite(R_ENB, pwmValue);
+
+    if (ms > 0)
+    {
+        delay(ms);
+        stop_motors();
+    }
 }
 
 void back_ms(int ms) {
-    int pwmValue = 255;
+    int pwmValue = speed_global;
+    if (ms < 0)
+    {
+        ms = 0;
+    }
 
     // Izquierdo hacia atrás
     digitalWrite(L_IN1, LOW);
@@ -129,10 +153,20 @@ void back_ms(int ms) {
 
     analogWrite(L_ENA, pwmValue);
     analogWrite(R_ENB, pwmValue);
+
+    if (ms > 0)
+    {
+        delay(ms);
+        stop_motors();
+    }
 }
 
 void turnLeft_ms(int ms) {
-    int pwmValue = 255;
+    int pwmValue = speed_global;
+    if (ms < 0)
+    {
+        ms = 0;
+    }
 
     // Parar lado izquierdo
     digitalWrite(L_IN1, LOW);
@@ -143,10 +177,20 @@ void turnLeft_ms(int ms) {
     digitalWrite(R_IN3, HIGH);
     digitalWrite(R_IN4, LOW);
     analogWrite(R_ENB, pwmValue);
+
+    if (ms > 0)
+    {
+        delay(ms);
+        stop_motors();
+    }
 }
 
 void turnRight_ms(int ms) {
-    int pwmValue = 255;
+    int pwmValue = speed_global;
+    if (ms < 0)
+    {
+        ms = 0;
+    }
 
     // Mover lado izquierdo hacia adelante
     digitalWrite(L_IN1, HIGH);
@@ -157,6 +201,12 @@ void turnRight_ms(int ms) {
     digitalWrite(R_IN3, LOW);
     digitalWrite(R_IN4, LOW);
     analogWrite(R_ENB, 0);
+
+    if (ms > 0)
+    {
+        delay(ms);
+        stop_motors();
+    }
 }
 
 void set_speed(int s) {
@@ -271,8 +321,7 @@ public:
                 break;
             }
             case B_STOP: {
-                // stop functionality removed — no hardware interaction
-                // keep as no-op to avoid calls to removed functions
+                stop_motors();
                 break;
             }
             case B_READ_IR_LEFT: {
