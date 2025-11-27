@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentación de referencia del lenguaje educativo TLP y su toolchain TinyVM.">
+        <meta name="description" content="Documentación de referencia del lenguaje A3 y su toolchain TinyVM.">
       
       
         <meta name="author" content="Pyload901">
@@ -27,7 +27,7 @@
     
     
       
-        <title>Referencia del Lenguaje - Lenguaje TLP</title>
+        <title>Referencia del Lenguaje - Lenguaje A3</title>
       
     
     
@@ -92,7 +92,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Lenguaje TLP" class="md-header__button md-logo" aria-label="Lenguaje TLP" data-md-component="logo">
+    <a href=".." title="Lenguaje A3" class="md-header__button md-logo" aria-label="Lenguaje A3" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -106,7 +106,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Lenguaje TLP
+            Lenguaje A3
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -202,13 +202,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Lenguaje TLP" class="md-nav__button md-logo" aria-label="Lenguaje TLP" data-md-component="logo">
+    <a href=".." title="Lenguaje A3" class="md-nav__button md-logo" aria-label="Lenguaje A3" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Lenguaje TLP
+    Lenguaje A3
   </label>
   
     <div class="md-nav__source">
@@ -460,6 +460,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Llamadas Integradas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#funciones-predefinidas-disponibles-via-exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Funciones predefinidas disponibles vía exec
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -692,6 +709,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Llamadas Integradas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#funciones-predefinidas-disponibles-via-exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Funciones predefinidas disponibles vía exec
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -849,6 +883,66 @@ end
 <pre><code>exec digitalWrite(pin, value);
 exec print(counter);
 </code></pre>
+<h4 id="funciones-predefinidas-disponibles-via-exec">Funciones predefinidas disponibles vía <code>exec</code><a class="headerlink" href="#funciones-predefinidas-disponibles-via-exec" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Descripción breve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>digitalRead</code></td>
+<td>Lee el estado lógico de un pin digital configurado como entrada.</td>
+</tr>
+<tr>
+<td><code>digitalWrite</code></td>
+<td>Escribe <code>HIGH</code>/<code>LOW</code> en un pin digital configurado como salida.</td>
+</tr>
+<tr>
+<td><code>analogRead</code></td>
+<td>Devuelve la lectura ADC del pin configurado para entradas analógicas.</td>
+</tr>
+<tr>
+<td><code>pwmWrite</code></td>
+<td>Genera una señal PWM en el pin indicado con el ciclo de trabajo proporcionado.</td>
+</tr>
+<tr>
+<td><code>pinMode</code></td>
+<td>Configura un pin como <code>INPUT</code>, <code>OUTPUT</code> u otros modos compatibles con TinyVM.</td>
+</tr>
+<tr>
+<td><code>print</code></td>
+<td>Envía al puerto serie el valor evaluado, útil para depuración.</td>
+</tr>
+<tr>
+<td><code>forward_ms</code></td>
+<td>Hace avanzar el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el robot se mueve indefinidamente sin importar el valor del parámetro.</td>
+</tr>
+<tr>
+<td><code>back_ms</code></td>
+<td>Hace retroceder el robot, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro indicados.</td>
+</tr>
+<tr>
+<td><code>turnLeft_ms</code></td>
+<td>Ordena un giro a la izquierda, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.</td>
+</tr>
+<tr>
+<td><code>turnRight_ms</code></td>
+<td>Ordena un giro a la derecha, recibe un parámetro de tipo entero que indica la cantidad de milisegundos indicada que se movera sin embargo actualmente no se soporta la cantidad de milisegundos por lo que el carro se mueve indefinidamente sin importar el valor del parámetro.</td>
+</tr>
+<tr>
+<td><code>readLeftSensor</code></td>
+<td>Devuelve la última lectura del sensor montado en el lado izquierdo en el pin 35</td>
+</tr>
+<tr>
+<td><code>readRightSensor</code></td>
+<td>Devuelve la lectura del sensor montado en el lado derecho en el pin 34.</td>
+</tr>
+</tbody>
+</table>
+<p>Cada invocación mediante <code>exec nombre(arg1, arg2, ...)</code> evalúa todos los argumentos antes de tocar hardware y se traduce a la instrucción <code>TRAP</code> correspondiente en TinyVM.</p>
 <h2 id="expresiones">Expresiones<a class="headerlink" href="#expresiones" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Unarios: <code>-x</code>, <code>not flag</code>.</li>
