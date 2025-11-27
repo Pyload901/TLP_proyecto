@@ -58,7 +58,8 @@ typedef enum {
     B_STOP          = 55, // stops motors
     // IR sensor builtins
     B_READ_IR_LEFT  = 60, // returns left sensor reading in R0
-    B_READ_IR_RIGHT = 61
+    B_READ_IR_RIGHT = 61,
+    B_DELAY         = 70  // registers[0]=ms
 } BuiltinTrapID;
 
 typedef struct {
@@ -332,6 +333,9 @@ static int get_builtin_trap_id(const char *name) {
     if (strcmp(name, "stopMotors") == 0) {
         return B_STOP;
     }
+    if (strcmp(name, "delay") == 0) {
+        return B_DELAY;
+    }
     return -1;  /* Not a builtin */
 }
 
@@ -587,7 +591,7 @@ static RegValue translate_exec_expr(Translator *tr, Node *node) {
 
     if (builtin_id >= 0) {
         for (size_t i = 0; i < arg_count; ++i) {
-            emit_move(tr, (uint8_t)(i + 1), args[i].reg);
+            emit_move(tr, (uint8_t)(i), args[i].reg);
             if (args[i].is_temp) release_temp(tr, args[i].reg);
         }
         emit_instruction(&tr->code, TRAP, (uint8_t) builtin_id, 0);

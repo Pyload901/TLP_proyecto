@@ -19,6 +19,7 @@ static char *builtin_functions[] = {
     "readRightSensor",
     "setSpeed",
     "stopMotors",
+    "delay",
 };
 static char *builtin_constants[] = {
     "INPUT",

@@ -64,7 +64,7 @@ enum BuiltinID_IO {
     B_PWM_WRITE     = 44, B_PIN_MODE      = 45,
     B_FORWARD       = 50, B_BACK          = 51, B_TURN_LEFT     = 52,
     B_TURN_RIGHT    = 53, B_SET_SPEED     = 54, B_STOP          = 55,
-    B_READ_IR_LEFT  = 60, B_READ_IR_RIGHT = 61
+    B_READ_IR_LEFT  = 60, B_READ_IR_RIGHT = 61, B_DELAY         = 70
 };
 
 // =========================
@@ -341,6 +341,11 @@ public:
                 bool result = lecturaSensorDer < umbralDer ? 0 : 1;
                 Serial.print("Right IR Sensor: "); Serial.println(lecturaSensorDer);
                 registers[0] = result;
+                break;
+            }
+            case B_DELAY: {
+                int ms = (int)registers[0];
+                delay(ms);
                 break;
             }
             default:
